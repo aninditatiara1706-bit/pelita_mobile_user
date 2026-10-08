@@ -1,17 +1,30 @@
-# flutter_pelita_user
+# Pelita Mobile User
 
-A new Flutter project.
+Aplikasi mobile **Pelita** untuk pengguna layanan Posyandu.
+
+## Fitur
+
+* Pendaftaran pengguna
+* Data anggota keluarga
+* Pendaftaran layanan Posyandu
+* Informasi jadwal Posyandu
+* Nomor antrean
+* Notifikasi
+* Riwayat pelayanan
+* Profil anggota keluarga
+
+## Teknologi
+
+* Flutter
+* Dart
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+Project ini dibuat menggunakan Flutter.
 
-A few resources to get you started if this is your first Flutter project:
+Untuk menjalankan project:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter pub get
+flutter run
+```
