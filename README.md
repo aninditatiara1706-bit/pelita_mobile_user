@@ -1,17 +1,80 @@
-# flutter_pelita_user
 
-A new Flutter project.
+# PELITA Mobile User
 
-## Getting Started
+Aplikasi mobile **PELITA** untuk pengguna layanan Posyandu, dikembangkan menggunakan Flutter sebagai bagian dari proyek kelompok.
 
-This project is a starting point for a Flutter application.
+## Teknologi
 
-A few resources to get you started if this is your first Flutter project:
+- Flutter
+- Dart
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Fitur
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Fitur yang sedang dikembangkan
+- Login dan pendaftaran pengguna
+- Beranda pengguna
+- Data anggota keluarga
+- Pendaftaran layanan Posyandu
+- Informasi jadwal Posyandu
+- Nomor antrean
+- Notifikasi
+- Riwayat pelayanan
+
+### Halaman Profil Saya
+- Menampilkan informasi profil pengguna
+- Menampilkan anggota keluarga atau peserta
+- Mengedit informasi profil
+- Halaman ubah kata sandi dengan validasi form
+- Pengaturan notifikasi
+- Menu Chat dengan Asisten AI (placeholder)
+- Menu Logout (belum terhubung ke autentikasi)
+
+> Catatan: Beberapa fitur masih menggunakan data dummy dan simulasi untuk kebutuhan demo UTS.
+
+## Cara Menjalankan
+
+Pastikan Flutter sudah terpasang.
+
+1. Clone repository:
+
+   ```bash
+   git clone https://github.com/aninditatiara1706-bit/pelita_mobile_user.git
+   ```
+
+2. Masuk ke folder project:
+
+   ```bash
+   cd pelita_mobile_user
+   ```
+
+3. Instal dependency:
+
+   ```bash
+   flutter pub get
+   ```
+
+4. Jalankan aplikasi:
+
+   ```bash
+   flutter run -d chrome
+   ```
+
+## Struktur Project
+
+```text
+lib/
+├── main.dart
+└── pages/
+    ├── profile_page.dart
+    └── change_password_page.dart
+
+assets/
+└── images/
+    ├── avatar_siti.png
+    ├── avatar_raka.png
+    └── avatar_sari.png
+```
+
+## Pengembangan
+
+Project ini dikerjakan secara berkelompok. Setiap anggota mengembangkan fitur pada file atau branch masing-masing sebelum digabungkan ke aplikasi utama.
