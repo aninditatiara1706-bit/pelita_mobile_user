@@ -1,4 +1,3 @@
-
 name: flutter_pelita_user
 description: "Aplikasi Mobile PELITA"
 publish_to: 'none'
@@ -14,7 +13,10 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
-dev_dependencies:
+  google_fonts: ^9.0.0
+
+  shared_preferences: ^2.5.6
+
   flutter_test:
     sdk: flutter
 
@@ -27,3 +29,10 @@ flutter:
     - assets/images/avatar_siti.png
     - assets/images/avatar_raka.png
     - assets/images/avatar_sari.png
+    - assets/images/logo_pelita.png
+    - assets/images/icon_balita.png
+    - assets/images/icon_ibu_hamil.png
+    - assets/images/icon_lansia.png
+    - assets/images/icon_booking.png
+    - assets/images/icon_antrean.png
+    - assets/images/icon_riwayat.png
