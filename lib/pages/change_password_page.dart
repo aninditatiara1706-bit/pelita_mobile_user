@@ -160,13 +160,12 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           children: [
             Icon(Icons.check_circle, color: Colors.green),
             SizedBox(width: 10),
-            Text('Validasi Berhasil'),
+            Text('Kata Sandi Valid'),
           ],
         ),
         content: const Text(
-          'Kata sandi baru telah memenuhi persyaratan. '
-          'Ini masih simulasi UTS, sehingga kata sandi '
-          'akun sebenarnya belum diubah.',
+          'Kata sandi baru telah memenuhi persyaratan '
+  'keamanan dan siap digunakan.',
         ),
         actions: [
           ElevatedButton(
@@ -400,7 +399,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
                   const SizedBox(height: 15),
                   const Text(
-                    'Demo UTS • Perubahan kata sandi masih berupa simulasi.',
+                    'Gunakan kata sandi yang kuat dan jangan membagikannya kepada siapa pun.' ,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 11,

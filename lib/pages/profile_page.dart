@@ -1,6 +1,10 @@
 
 import 'package:flutter/material.dart';
 import 'change_password_page.dart';
+import 'notification_page.dart';
+import 'edit_profile_page.dart';
+import 'ai_assistant_page.dart';
+import 'profil_peserta_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -9,10 +13,119 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
+final List<Peserta> daftarPeserta = [
+  const Peserta(
+    nama: 'Raka',
+    kategori: 'Balita 3 Tahun',
+    tanggalLahir: '12-09-2022',
+    jenisKelamin: 'Laki-Laki',
+    namaOrangTua: 'Siti Nurhaliza',
+    nik: 'XXXXXXXXXX',
+    terakhirDiperiksa: '12 Mei 2026',
+    avatar: Icons.child_care,
+    warnaAvatar: Color(0xFFFFD5C2),
+    
+berat: [
+  7.2, 8.1, 7.8, 9.4, 9.1, 9.8,
+  9.5, 10.2, 10.0, 10.8, 10.5, 11.2,
+],
+
+tinggiBadan: [
+  72, 77, 76, 83, 86, 85,
+  89, 91, 90, 94, 96, 98,
+],
+
+lingkarKepala: [
+  44.0, 45.2, 44.8, 46.0, 45.7, 46.5,
+  46.2, 47.0, 46.8, 47.5, 47.2, 48.0,
+],
+
+  ),
+  const Peserta(
+    nama: 'Sari',
+    kategori: 'Lansia 67 Tahun',
+    tanggalLahir: '15-04-1959',
+    jenisKelamin: 'Perempuan',
+    namaOrangTua: '-',
+    nik: 'XXXXXXXXXX',
+    terakhirDiperiksa: '10 Mei 2026',
+    avatar: Icons.face_3,
+    warnaAvatar: Color(0xFFE8B8AD),
+    
+berat: [
+  58, 59, 58.5, 60, 59, 60.5,
+  59.5, 61, 60, 60.8, 59.8, 60.5,
+],
+
+tinggiBadan: [
+  158, 158, 158, 158, 158, 158,
+  158, 158, 158, 158, 158, 158,
+],
+
+lingkarKepala: [
+  56, 56, 56, 56, 56, 56,
+  56, 56, 56, 56, 56, 56,
+],
+
+sistolik: [
+  138, 142, 135, 145, 140, 136,
+  144, 139, 133, 141, 137, 134,
+],
+
+diastolik: [
+  88, 90, 85, 92, 87, 84,
+  91, 86, 82, 89, 85, 83,
+],
+
+gulaDarah: [
+  145, 153, 140, 158, 148, 136,
+  155, 143, 139, 151, 142, 137,
+],
+
+denyutNadi: [
+  78, 84, 76, 82, 80, 74,
+  86, 79, 77, 83, 75, 78,
+],
+
+  ),
+];
+
 class _ProfilePageState extends State<ProfilePage> {
   String nama = 'Siti Nurhaliza';
   String telepon = '0812 3456 7890';
   String email = 'siti.nurhaliza@gmail.com';
+  
+String avatarProfil = 'assets/images/avatar_siti.png';
+
+Future<void> bukaEditProfil() async {
+  final hasil = await Navigator.push<Map<String, String>>(
+    context,
+    MaterialPageRoute(
+      builder: (context) => EditProfilePage(
+        nama: nama,
+        telepon: telepon,
+        email: email,
+        avatar: avatarProfil,
+      ),
+    ),
+  );
+
+  if (!mounted || hasil == null) return;
+
+  setState(() {
+    nama = hasil['nama'] ?? nama;
+    telepon = hasil['telepon'] ?? telepon;
+    email = hasil['email'] ?? email;
+    avatarProfil = hasil['avatar'] ?? avatarProfil;
+  });
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Profil berhasil diperbarui'),
+    ),
+  );
+}
+
   bool notifikasiAktif = true;
 
   final Color pink = const Color(0xFFE0468F);
@@ -187,50 +300,88 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // ===================== KARTU PESERTA =====================
 
-  Widget kartuPeserta(
-    String nama,
-    String kategori,
-    String umur,
-    String gambar,
-  ) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(17),
-      onTap: () => tampilPesan('Profil peserta $nama'),
-      child: Container(
-        width: 91,
-        padding: const EdgeInsets.all(9),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.black87),
-          borderRadius: BorderRadius.circular(17),
-        ),
-        child: Column(
-          children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: Colors.pink.shade50,
-              backgroundImage: AssetImage(gambar),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              nama,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              kategori,
-              style: const TextStyle(fontSize: 12),
-            ),
-            Text(
-              umur,
-              style: const TextStyle(fontSize: 12),
-            ),
-          ],
+  
+Widget buildPesertaSaya(BuildContext context) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Peserta Saya',
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.bold,
         ),
       ),
-    );
-  }
+      const SizedBox(height: 12),
+      Row(
+        children: daftarPeserta.map((peserta) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 15),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(15),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ProfilPesertaPage(
+                      peserta: peserta,
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                width: 85,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(
+                    color: Colors.black87,
+                  ),
+                  borderRadius:
+                      BorderRadius.circular(15),
+                ),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 25,
+                      backgroundColor:
+                          peserta.warnaAvatar,
+                      child: Icon(
+                        peserta.avatar,
+                        size: 30,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      peserta.nama,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      peserta.kategori,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    ],
+  );
+}
+
 
   // ===================== MENU PENGATURAN =====================
 
@@ -330,14 +481,11 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                               child: Row(
                                 children: [
-                                  const CircleAvatar(
-                                    radius: 37,
-                                    backgroundColor:
-                                        Color(0xFFFFD1AE),
-                                    backgroundImage: AssetImage(
-                                      'assets/images/avatar_siti.png',
-                                    ),
-                                  ),
+                                  CircleAvatar(
+  radius: 37,
+  backgroundColor: const Color(0xFFFFD1AE),
+  backgroundImage: AssetImage(avatarProfil),
+),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Column(
@@ -391,11 +539,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                       ],
                                     ),
                                   ),
+                                 
                                   IconButton(
-                                    onPressed: editProfil,
-                                    icon: const Icon(
-                                      Icons.edit_square,
-                                    ),
+                                    onPressed: bukaEditProfil,
+                                    icon: const Icon(Icons.edit_square),
                                   ),
                                 ],
                               ),
@@ -405,6 +552,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
 
                       // BAGIAN PESERTA DAN PENGATURAN
+
                       Transform.translate(
                         offset: const Offset(0, -12),
                         child: Container(
@@ -432,19 +580,57 @@ class _ProfilePageState extends State<ProfilePage> {
                               // AVATAR RAKA DAN SARI
                               Row(
                                 children: [
-                                  kartuPeserta(
-                                    'Raka',
-                                    'Balita',
-                                    '3 tahun',
-                                    'assets/images/avatar_raka.png',
-                                  ),
-                                  const SizedBox(width: 15),
-                                  kartuPeserta(
-                                    'Sari',
-                                    'Lansia',
-                                    '67 Tahun',
-                                    'assets/images/avatar_sari.png',
-                                  ),
+                                  ...daftarPeserta.map((peserta) {
+  return Padding(
+    padding: const EdgeInsets.only(right: 15),
+    child: InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProfilPesertaPage(
+              peserta: peserta,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: 91,
+        padding: const EdgeInsets.all(9),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: Colors.black87),
+          borderRadius: BorderRadius.circular(17),
+        ),
+        child: Column(
+          children: [
+           CircleAvatar(
+  radius: 24,
+  backgroundColor: peserta.warnaAvatar,
+  backgroundImage: AssetImage(
+    peserta.nama == 'Raka'
+        ? 'assets/images/avatar_raka.png'
+        : 'assets/images/avatar_sari.png',
+  ),
+),
+            const SizedBox(height: 6),
+            Text(
+              peserta.nama,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              peserta.kategori,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}),
                                 ],
                               ),
 
@@ -472,20 +658,34 @@ menuPengaturan(
   },
 ),
 
-                              menuPengaturan(
-                                Icons.notifications_none,
-                                'Notifikasi',
-                                () {
-                                  // Implement notification logic here
-                                },
-                              ),
-                              menuPengaturan(
-                                Icons.smart_toy_outlined,
-                                'Chat dengan Asisten AI',
-                                () => tampilPesan(
-                                  'Fitur AI direncanakan untuk pengembangan berikutnya',
-                                ),
-                              ),
+                              
+menuPengaturan(
+  Icons.notifications_none,
+  'Notifikasi',
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const NotificationPage(),
+      ),
+    );
+  },
+),
+
+                              
+menuPengaturan(
+  Icons.smart_toy_outlined,
+  'Chat dengan Asisten AI',
+  () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AiAssistantPage(),
+      ),
+    );
+  },
+),
+
                               menuPengaturan(
                                 Icons.logout,
                                 'Logout',
