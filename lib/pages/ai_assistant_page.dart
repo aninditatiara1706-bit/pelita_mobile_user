@@ -454,7 +454,6 @@ class _AiAssistantPageState extends State<AiAssistantPage> {
                   ),
                 ),
 
-                // TOPIK DAN PERCAKAPAN
                 Expanded(
                   child: ListView(
                     controller: _scrollController,
@@ -583,10 +582,8 @@ Expanded(
                   ),
                 ),
 
-                // FAQ DAPAT DIBUKA DAN DITUTUP
                 _faqSection(),
 
-                // KOLOM KIRIM PESAN
                 _chatInput(),
               ],
             ),
