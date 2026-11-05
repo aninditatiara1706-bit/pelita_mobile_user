@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 class NotificationPage extends StatelessWidget {
@@ -73,7 +72,7 @@ class NotificationPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Tombol kembali
+
                 Padding(
                   padding: const EdgeInsets.only(
                     top: 12,
@@ -91,7 +90,6 @@ class NotificationPage extends StatelessWidget {
 
                 const SizedBox(height: 7),
 
-                // Judul halaman
                 const Center(
                   child: Text(
                     'Notifikasi Saya',

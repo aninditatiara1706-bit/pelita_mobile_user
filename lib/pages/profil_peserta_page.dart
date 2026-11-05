@@ -17,7 +17,6 @@ class Peserta {
   final List<double> tinggiBadan;
   final List<double> lingkarKepala;
   
-// DATA PEMANTAUAN KESEHATAN LANSIA
 final List<double> sistolik;
 final List<double> diastolik;
 final List<double> gulaDarah;
@@ -61,7 +60,6 @@ class _ProfilPesertaPageState extends State<ProfilPesertaPage> {
   bool get isLansia =>
     widget.peserta.kategori.toLowerCase().contains('lansia');
 
-  // Periode grafik yang sedang dipilih
   int selectedPeriode = 3;
 
   List<String> get jenisGrafik => isLansia
@@ -77,8 +75,6 @@ class _ProfilPesertaPageState extends State<ProfilPesertaPage> {
         'Lingkar Kepala',
       ];
 
-
-  // 1. Mengambil data sesuai tab yang dipilih
   List<double> getCurrentData() {
   final peserta = widget.peserta;
 
@@ -109,7 +105,6 @@ class _ProfilPesertaPageState extends State<ProfilPesertaPage> {
   }
 }
 
-  // 2. Menentukan satuan grafik
   String getCurrentUnit() {
   if (isLansia) {
     switch (selectedGrafik) {
@@ -129,33 +124,12 @@ class _ProfilPesertaPageState extends State<ProfilPesertaPage> {
   return selectedGrafik == 0 ? 'kg' : 'cm';
 }
 
-Color getWarnaGrafik() {
-  if (isLansia) {
-    switch (selectedGrafik) {
-      case 0:
-        return const Color(0xFFE47788); // Tekanan darah
-      case 1:
-        return const Color(0xFF818DDC); // Berat
-      case 2:
-        return const Color(0xFF22B8A0); // Gula darah
-      case 3:
-        return const Color(0xFF9B55DA); // Nadi
-    }
-  }
 
-  switch (selectedGrafik) {
-    case 0:
-      return const Color(0xFF818DDC);
-    case 1:
-      return const Color(0xFF22B8A0);
-    case 2:
-      return const Color(0xFFE78AAF);
-    default:
-      return const Color(0xFF818DDC);
-  }
+
+Color getWarnaGrafik() {
+  return const Color(0xFF9148D8);
 }
 
-  // 3. Menentukan batas bawah grafik
  double getMinY(List<double> data) {
   switch (selectedGrafik) {
     case 0:
@@ -195,26 +169,9 @@ double getInterval(List<double> data) {
   }
 }
 
-// TAMBAHKAN KODE GRAFIK TAB DI SINI
-
-
 Widget grafikTab(String title, int index) {
   final aktif = selectedGrafik == index;
-
-  final warnaTab = isLansia
-      ? const [
-          Color(0xFFE47788),
-          Color(0xFF818DDC),
-          Color(0xFF22B8A0),
-          Color(0xFF9B55DA),
-        ]
-      : const [
-          Color(0xFF818DDC),
-          Color(0xFF22B8A0),
-          Color(0xFFE78AAF),
-        ];
-
-  final warna = warnaTab[index];
+  final warna = const Color(0xFF9148D8);
 
   return GestureDetector(
     onTap: () {
@@ -240,9 +197,7 @@ Widget grafikTab(String title, int index) {
         title,
         style: TextStyle(
           fontSize: 12,
-          fontWeight: aktif
-              ? FontWeight.bold
-              : FontWeight.w500,
+          fontWeight: aktif ? FontWeight.bold : FontWeight.w500,
           color: aktif ? Colors.white : warna,
         ),
       ),
@@ -250,8 +205,6 @@ Widget grafikTab(String title, int index) {
   );
 }
 
-
-  
 Widget tombolPeriode(String title, int bulan) {
   final aktif = selectedPeriode == bulan;
 
@@ -289,10 +242,7 @@ Widget tombolPeriode(String title, int bulan) {
     ),
   );
 }
-
   
-  
-
 Widget buildGrowthChart() {
   final semuaData = getCurrentData();
   final unit = getCurrentUnit();
@@ -330,7 +280,6 @@ Widget buildGrowthChart() {
     );
   }
 
-  // Rentang sumbu Y termasuk kedua nilai tekanan darah
   final nilaiSemua = <double>[
     ...data,
     if (tekananDarah) ...diastolik,
@@ -387,7 +336,6 @@ Widget buildGrowthChart() {
     ),
   ];
 
-  // Tambahkan garis diastolik khusus tekanan darah
   if (tekananDarah && diastolik.isNotEmpty) {
     const warnaDiastolik = Color(0xFFF2B36B);
 
@@ -421,7 +369,7 @@ Widget buildGrowthChart() {
 
   return Column(
     children: [
-      // Keterangan dua garis tekanan darah
+
       if (tekananDarah)
         Padding(
           padding: const EdgeInsets.only(bottom: 14),
@@ -572,11 +520,11 @@ Widget buildGrowthChart() {
               ),
             ),
 
-            lineBarsData: garisGrafik,
+                          lineBarsData: garisGrafik,
+            ),
+            duration: const Duration(milliseconds: 650),
+            curve: Curves.easeInOutCubic,
           ),
-          duration: const Duration(milliseconds: 550),
-          curve: Curves.easeInOutCubic,
-        ),
       ),
     ],
   );
@@ -621,7 +569,6 @@ Widget buildGrowthChart() {
             ),
             const SizedBox(height: 35),
 
-            // KARTU IDENTITAS PESERTA
             Container(
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.black54),
@@ -694,7 +641,6 @@ Widget buildGrowthChart() {
 
             const SizedBox(height: 12),
 
-            // RIWAYAT PEMERIKSAAN
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(15),
@@ -726,8 +672,6 @@ Widget buildGrowthChart() {
             ),
 
             const SizedBox(height: 12),
-
-            // GRAFIK PERTUMBUHAN
             
 Container(
   width: double.infinity,
@@ -756,7 +700,6 @@ Container(
 
       const SizedBox(height: 15),
 
-      // PILIH JENIS PENGUKURAN
       SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -772,7 +715,6 @@ Container(
 
       const SizedBox(height: 18),
 
-      // PILIH PERIODE
       SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -788,34 +730,10 @@ Container(
 
       const SizedBox(height: 16),
 
-      // GRAFIK ANIMASI
-      AnimatedSwitcher(
-        duration: const Duration(
-          milliseconds: 450,
-        ),
-        transitionBuilder: (child, animation) {
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0.05, 0),
-                end: Offset.zero,
-              ).animate(animation),
-              child: child,
-            ),
-          );
-        },
-        child: SizedBox(
-          key: ValueKey(
-            '${selectedGrafik}_$selectedPeriode',
-          ),
-          child: buildGrowthChart(),
-        ),
-      ),
+buildGrowthChart(),
 
       const SizedBox(height: 12),
 
-      // KETERANGAN
       const Row(
         children: [
           Icon(

@@ -1,17 +1,19 @@
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
-// Import halaman profile, tentang, dan layanan
 import 'profile_page.dart';
-import 'tentang_page.dart';
+import 'ai_assistant_page.dart';
+import 'notification_page.dart';
 import 'layanan_balita.dart';
 import 'layanan_ibu_hamil.dart';
 import 'layanan_lansia.dart';
 import 'riwayat_pelayanan_page.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'daftar_posyandu_page.dart';
 import 'pantau_antrean_page.dart';
 
-/// Warna utama aplikasi PELITA
 class PelitaColors {
   static const purple = Color(0xFF8A3FC7);
   static const pink = Color(0xFFE5507E);
@@ -19,8 +21,6 @@ class PelitaColors {
   static const chart = Color(0xFF7C7FD8);
   static const chipPurple = Color(0xFF8A3FC7);
   static const bg = Color(0xFFF7F4FB);
-
-  // Gradasi background navbar
   static const navPurple = Color(0xFFE8D9FA);
   static const navPink = Color(0xFFFFDDE8);
 }
@@ -36,69 +36,116 @@ class _DashboardPageState extends State<DashboardPage> {
   int _selectedChip = 0;
   int _navIndex = 0;
 
-  // Folder penyimpanan gambar
   static const String _assetPath = 'assets/images';
 
-  final List<String> _chips = [
-    'Berat Badan',
-    'Tinggi Badan',
-    'Lingkar Kepala',
-  ];
-
-  // Daftar menu dan halaman tujuan
   final List<_MenuItem> _menus = const [
     _MenuItem(
       'Balita',
-      'icon_balita.png',
+      'icon_balita_dashboard.png',
       targetPage: LayananBalitaPage(),
     ),
     _MenuItem(
       'Ibu Hamil',
-      'icon_ibu_hamil.png',
+      'icon_ibuhamil_dashboard.png',
       targetPage: LayananIbuHamilPage(),
     ),
     _MenuItem(
       'Lansia',
-      'icon_lansia.png',
+      'icon_lansia_dashboard.png',
       targetPage: LayananLansiaPage(),
     ),
-    _MenuItem('Booking\nAntrean', 'icon_booking.png'),
     _MenuItem(
-      'Antrean', 
-      'icon_antrean.png',
-      targetPage: RiwayatPelayananPage(), 
-    ),
+  'Booking\nAntrean',
+  'icon_booking.png',
+  targetPage: DaftarPosyanduPage(),
+),
+_MenuItem(
+  'Antrean',
+  'icon_antrean_dashboard.png',
+  targetPage: PantauAntreanPage(
+    nomorAntrean: 'A-12',
+    namaPeserta: 'Raka',
+  ),
+),
     _MenuItem(
       'Riwayat',
-      'icon_riwayat.png',
+      'icon_riwayat_dashboard.png',
       targetPage: RiwayatPelayananPage(),
     ),
   ];
 
-  // Data grafik pertumbuhan Januari - Mei
-  final Map<int, _ChartData> _chartData = const {
-    0: _ChartData(
-      minY: 6,
-      maxY: 12,
-      step: 2,
-      unit: 'kg',
-      values: [7.3, 8.5, 9.2, 10.0, 11.0],
-    ),
-    1: _ChartData(
-      minY: 60,
-      maxY: 80,
-      step: 5,
-      unit: 'cm',
-      values: [65, 67.5, 70, 72, 74],
-    ),
-    2: _ChartData(
-      minY: 38,
-      maxY: 46,
-      step: 2,
-      unit: 'cm',
-      values: [40, 41, 42.5, 43.5, 44.5],
-    ),
-  };
+  List<GrowthRecord> _riwayatPertumbuhan = [];
+  DateTime? _tanggalDaftarTerakhir;
+
+  static const List<String> _namaBulan = [
+    'Jan', 'Feb', 'Mar', 'Apr',
+    'Mei', 'Jun', 'Jul', 'Agu',
+    'Sep', 'Okt', 'Nov', 'Des',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _muatGrafik();
+  }
+
+  
+  Future<void> _muatGrafik() async {
+    final sekarang = DateTime.now();
+
+    final contoh = <GrowthRecord>[
+      GrowthRecord(
+        tanggal: DateTime(sekarang.year, sekarang.month - 4, 1),
+        berat: 7.3,
+        tinggi: 65,
+        lingkarKepala: 40,
+      ),
+      GrowthRecord(
+        tanggal: DateTime(sekarang.year, sekarang.month - 3, 1),
+        berat: 8.5,
+        tinggi: 67.5,
+        lingkarKepala: 41,
+      ),
+      GrowthRecord(
+        tanggal: DateTime(sekarang.year, sekarang.month - 2, 1),
+        berat: 9.2,
+        tinggi: 70,
+        lingkarKepala: 42.5,
+      ),
+      GrowthRecord(
+        tanggal: DateTime(sekarang.year, sekarang.month - 1, 1),
+        berat: 10.0,
+        tinggi: 72,
+        lingkarKepala: 43.5,
+      ),
+      GrowthRecord(
+        tanggal: DateTime(sekarang.year, sekarang.month, 1),
+        berat: 11.0,
+        tinggi: 74,
+        lingkarKepala: 44.5,
+      ),
+    ];
+
+    if (!mounted) return;
+
+    setState(() {
+      _riwayatPertumbuhan = contoh;
+      _tanggalDaftarTerakhir = sekarang;
+    });
+  }
+
+
+  bool get _tampilkanGrafik {
+    return _tanggalDaftarTerakhir != null &&
+        DateUtils.isSameDay(
+          _tanggalDaftarTerakhir,
+          DateTime.now(),
+        ) &&
+        _riwayatPertumbuhan.isNotEmpty;
+  }
+
+  
+
 
   @override
   Widget build(BuildContext context) {
@@ -111,10 +158,15 @@ class _DashboardPageState extends State<DashboardPage> {
               padding: EdgeInsets.zero,
               child: Column(
                 children: [
-                  _buildHeader(),
-                  _buildGrowthChartCard(),
-                  const SizedBox(height: 20),
-                ],
+  _buildHeader(),
+
+  const SizedBox(height: 12),
+
+  if (_tampilkanGrafik)
+    _buildGrowthChartCard(),
+
+  const SizedBox(height: 20),
+],
               ),
             ),
           ),
@@ -168,7 +220,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   width: 34,
                                   height: 34,
                                   alignment: Alignment.center,
-                                  color: Colors.white.withOpacity(0.25),
+                                  color: Colors.white.withValues(alpha: 0.25),
                                   child: const Icon(
                                     Icons.image_not_supported_outlined,
                                     color: Colors.white,
@@ -217,11 +269,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
         // Kartu menu
         Padding(
-          padding: const EdgeInsets.only(
-            top: 140,
-            left: 12,
-            right: 12,
-          ),
+  padding: const EdgeInsets.only(
+    top: 185,
+    left: 12,
+    right: 12,
+  ),
           child: Container(
             padding: const EdgeInsets.symmetric(
               vertical: 18,
@@ -232,7 +284,7 @@ class _DashboardPageState extends State<DashboardPage> {
               borderRadius: BorderRadius.circular(26),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.18),
+                  color: Colors.black.withValues(alpha: 0.18),
                   blurRadius: 14,
                   offset: const Offset(0, 6),
                 ),
@@ -256,11 +308,10 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
 
-        // Ruang untuk kartu menu
-        const SizedBox(
-          height: 410,
-          width: double.infinity,
-        ),
+const SizedBox(
+  height: 455,
+  width: double.infinity,
+),
       ],
     );
   }
@@ -269,8 +320,18 @@ class _DashboardPageState extends State<DashboardPage> {
   // IKON NOTIFIKASI
   // =========================================================
 
-  Widget _buildBell() {
-    return Stack(
+  
+Widget _buildBell() {
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const NotificationPage(),
+        ),
+      );
+    },
+    child: Stack(
       clipBehavior: Clip.none,
       children: [
         const Icon(
@@ -300,8 +361,10 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
       ],
-    );
-  }
+    ),
+  );
+}
+
 
   // =========================================================
   // ITEM MENU
@@ -310,8 +373,8 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildMenuItem(_MenuItem item) {
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      splashColor: PelitaColors.purple.withOpacity(0.15),
-      highlightColor: PelitaColors.pink.withOpacity(0.08),
+      splashColor: PelitaColors.purple.withValues(alpha: 0.15),
+      highlightColor: PelitaColors.pink.withValues(alpha: 0.08),
       onTap: () {
         if (item.targetPage != null) {
           Navigator.push(
@@ -370,111 +433,343 @@ class _DashboardPageState extends State<DashboardPage> {
   // GRAFIK PERTUMBUHAN
   // =========================================================
 
+  
   Widget _buildGrowthChartCard() {
-    final data = _chartData[_selectedChip]!;
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        final kecepatan = details.primaryVelocity ?? 0;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0xFFE3DFF0),
+        if (kecepatan.abs() < 100) return;
+
+        setState(() {
+          if (kecepatan < 0 && _selectedChip < 2) {
+            _selectedChip++;
+          } else if (kecepatan > 0 && _selectedChip > 0) {
+            _selectedChip--;
+          }
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFFE3DFF0),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Grafik Pertumbuhan',
-            style: GoogleFonts.poppins(
-              color: PelitaColors.navy,
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Grafik Pertumbuhan',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1A1A5E),
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
 
-          // Pilihan kategori grafik
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: List.generate(_chips.length, (i) {
-                final selected = i == _selectedChip;
+            const SizedBox(height: 12),
 
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedChip = i;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? PelitaColors.chipPurple
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: selected
-                              ? PelitaColors.chipPurple
-                              : const Color(0xFFCFCFD8),
-                        ),
-                      ),
-                      child: Text(
-                        _chips[i],
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          color: selected
-                              ? Colors.white
-                              : const Color(0xFF555555),
-                          fontWeight: selected
-                              ? FontWeight.w500
-                              : FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          SizedBox(
-            height: 150,
-            width: double.infinity,
-            child: CustomPaint(
-              painter: _LineChartPainter(
-                data: data,
-                labels: const [
-                  'Jan',
-                  'Feb',
-                  'Mar',
-                  'Apr',
-                  'Mei',
+            // Hanya tiga tombol jenis grafik
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildGrafikTab('Berat Badan', 0),
+                  _buildGrafikTab('Tinggi Badan', 1),
+                  _buildGrafikTab('Lingkar Kepala', 2),
                 ],
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(height: 14),
+
+            // Grafik bergaya Profil Peserta
+            _buildGrafikGaris(),
+          ],
+        ),
       ),
     );
   }
+
+  Widget _buildGrafikTab(String title, int index) {
+    final aktif = _selectedChip == index;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedChip = index;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        margin: const EdgeInsets.only(right: 6),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 7,
+        ),
+        decoration: BoxDecoration(
+          color: aktif
+              ? const Color(0xFF9148D8)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: aktif
+                ? const Color(0xFF9148D8)
+                : const Color(0xFFC9D2F8),
+          ),
+        ),
+        child: Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: aktif
+                ? Colors.white
+                : const Color(0xFF818DDC),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGrafikGaris() {
+    final sekarang = DateTime.now();
+
+    final bulan = List.generate(
+      5,
+      (index) => DateTime(
+        sekarang.year,
+        sekarang.month - 4 + index,
+        1,
+      ),
+    );
+
+    final labels = bulan
+        .map((item) => _namaBulan[item.month - 1])
+        .toList();
+
+    final unit = _selectedChip == 0 ? 'kg' : 'cm';
+
+    final titik = <FlSpot>[];
+
+    for (int i = 0; i < bulan.length; i++) {
+      final dataBulan = _riwayatPertumbuhan.where(
+        (item) =>
+            item.tanggal.year == bulan[i].year &&
+            item.tanggal.month == bulan[i].month,
+      ).toList();
+
+      if (dataBulan.isEmpty) continue;
+
+      final item = dataBulan.last;
+
+      final nilai = _selectedChip == 0
+          ? item.berat
+          : _selectedChip == 1
+              ? item.tinggi
+              : item.lingkarKepala;
+
+      titik.add(FlSpot(i.toDouble(), nilai));
+    }
+
+    if (titik.isEmpty) {
+      return const SizedBox(
+        height: 200,
+        child: Center(
+          child: Text('Belum ada data pemeriksaan'),
+        ),
+      );
+    }
+
+    final nilaiY = titik.map((e) => e.y).toList();
+
+    final terendah = nilaiY.reduce(
+      (a, b) => a < b ? a : b,
+    );
+
+    final tertinggi = nilaiY.reduce(
+      (a, b) => a > b ? a : b,
+    );
+
+    final selisih = tertinggi - terendah;
+    final jarak = selisih == 0 ? 2.0 : selisih * 0.3;
+
+    final minY = (terendah - jarak).floorToDouble();
+    final maxY = (tertinggi + jarak).ceilToDouble();
+
+    final interval = (maxY - minY) / 4;
+
+    const warnaGrafik = Color(0xFF9148D8);
+
+    return SizedBox(
+      height: 220,
+      child: LineChart(
+        LineChartData(
+          minX: 0,
+          maxX: 4,
+          minY: minY,
+          maxY: maxY,
+
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: interval,
+            getDrawingHorizontalLine: (value) {
+              return FlLine(
+                color: const Color(0xFFEBE6F3),
+                strokeWidth: 0.8,
+              );
+            },
+          ),
+
+          borderData: FlBorderData(show: false),
+
+          titlesData: FlTitlesData(
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                interval: 1,
+                reservedSize: 28,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+
+                  if (index < 0 ||
+                      index >= labels.length ||
+                      value != index.toDouble()) {
+                    return const SizedBox();
+                  }
+
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    space: 8,
+                    child: Text(
+                      labels[index],
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF9187A5),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 45,
+                interval: interval,
+                getTitlesWidget: (value, meta) {
+                  if (value <= minY + 0.001 ||
+                      value >= maxY - 0.001) {
+                    return const SizedBox();
+                  }
+
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    space: 4,
+                    child: Text(
+                      '${value.toStringAsFixed(1)} $unit',
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: Color(0xFF9187A5),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+
+          lineTouchData: LineTouchData(
+            enabled: true,
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (touchedSpot) =>
+    const Color(0xFF6631A0),
+              getTooltipItems: (spots) {
+                return spots.map((spot) {
+                  final index = spot.x.round();
+
+                  return LineTooltipItem(
+                    '${labels[index]}\n'
+                    '${spot.y.toStringAsFixed(1)} $unit',
+                    const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
+                }).toList();
+              },
+            ),
+          ),
+
+          lineBarsData: [
+            LineChartBarData(
+              spots: titik,
+              isCurved: true,
+              curveSmoothness: 0.22,
+              preventCurveOverShooting: true,
+              color: warnaGrafik,
+              barWidth: 2.5,
+              isStrokeCapRound: true,
+
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (
+                  spot,
+                  percent,
+                  barData,
+                  index,
+                ) {
+                  return FlDotCirclePainter(
+                    radius: 3.5,
+                    color: warnaGrafik,
+                    strokeWidth: 1.5,
+                    strokeColor: Colors.white,
+                  );
+                },
+              ),
+
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    warnaGrafik.withValues(alpha: 0.18),
+                    warnaGrafik.withValues(alpha: 0.02),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(milliseconds: 550),
+        curve: Curves.easeInOutCubic,
+      ),
+    );
+  }
+
 
   // =========================================================
   // BOTTOM NAVIGATION
@@ -496,7 +791,7 @@ class _DashboardPageState extends State<DashboardPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => const TentangPage(),
+          builder: (_) => const AiAssistantPage(),
         ),
       ).then((_) {
         if (mounted) {
@@ -532,54 +827,211 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFFE05297),
-            Color(0xFF7E3FB4),
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+    return SizedBox(
+      height: 78,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // BACKGROUND NAVBAR
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 10,
+            bottom: 0,
+            child: Container(
+              color: Colors.white,
+              child: Column(
+                children: [
+                  // GARIS NAVBAR KIRI DAN KANAN AI
+Row(
+  children: [
+    // GARIS SEBELAH KIRI
+    Expanded(
+      child: Container(
+        height: 1.2,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFFE0468F),
+              Color(0xFFC94AB5),
+            ],
+          ),
         ),
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(
-          canvasColor: Colors.transparent,
+    ),
+
+    // JARAK UNTUK LINGKARAN AI
+    const SizedBox(width: 76),
+
+    // GARIS SEBELAH KANAN
+    Expanded(
+      child: Container(
+        height: 1.2,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFFC94AB5),
+              Color(0xFF9148D8),
+            ],
+          ),
         ),
-        child: BottomNavigationBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          type: BottomNavigationBarType.fixed,
-          currentIndex: _navIndex,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white70,
-          selectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
+      ),
+    ),
+  ],
+),
+
+                  Expanded(
+                    child: Row(
+                      children: [
+                        _buildBottomNavItem(
+                          index: 0,
+                          label: 'Home',
+                        ),
+
+                        const SizedBox(width: 82),
+
+                        _buildBottomNavItem(
+                          index: 2,
+                          label: 'Profile',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 12,
+
+          // TOMBOL AI LITA DI TENGAH
+          Positioned(
+            top: -18,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: GestureDetector(
+                onTap: () => _onNavTap(1),
+                child: Container(
+                  width: 76,
+                  height: 76,
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF9148D8),
+                      width: 1.8,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF9148D8)
+                            .withValues(alpha: 0.25),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+  'assets/images/icon_lita_navbar.png',
+  width: 64,
+  height: 64,
+  fit: BoxFit.contain,
+  errorBuilder: (context, error, stackTrace) {
+    return const Icon(
+      Icons.smart_toy_rounded,
+      color: Color(0xFF9148D8),
+      size: 42,
+    );
+  },
+),
+                  ),
+                ),
+              ),
+            ),
           ),
-          onTap: _onNavTap,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.menu_book_rounded),
-              label: 'Tentang',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_rounded),
-              label: 'Profile',
-            ),
-          ],
+        ],
+      ),
+    );
+  }
+
+  // ITEM HOME DAN PROFILE
+  Widget _buildBottomNavItem({
+    required int index,
+    required String label,
+  }) {
+    final selected = _navIndex == index;
+    final homeAktif = index == 0 && selected;
+    final profileAktif = index == 2 && selected;
+    final itemAktif = homeAktif || profileAktif;
+    final itemIcon = homeAktif
+        ? Icons.home_rounded
+        : profileAktif
+            ? Icons.person_rounded
+            : index == 0
+                ? Icons.home_outlined
+                : Icons.person_outline_rounded;
+
+    return Expanded(
+      child: InkWell(
+        onTap: () => _onNavTap(index),
+        child: SizedBox.expand(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: itemAktif
+                      ? const LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Color(0xC7E0468F),
+                            Color(0xC79148D8),
+                          ],
+                        )
+                      : null,
+                ),
+                child: itemAktif
+                    ? Icon(itemIcon, size: 26, color: Colors.white)
+                    : ShaderMask(
+                        blendMode: BlendMode.srcIn,
+                        shaderCallback: (bounds) => const LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Color(0xFFE0468F),
+                            Color(0xFF9148D8),
+                          ],
+                        ).createShader(bounds),
+                        child: Icon(
+                          itemIcon,
+                          size: 26,
+                          color: Colors.white,
+                        ),
+                      ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight:
+                      selected ? FontWeight.w600 : FontWeight.w400,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+
 } // Penutup class _DashboardPageState
 
 // =============================================================
@@ -602,164 +1054,146 @@ class _MenuItem {
 // MODEL GRAFIK
 // =============================================================
 
-class _ChartData {
-  final double minY;
-  final double maxY;
-  final double step;
-  final String unit;
-  final List<double> values;
+class GrowthRecord {
 
-  const _ChartData({
-    required this.minY,
-    required this.maxY,
-    required this.step,
-    required this.unit,
-    required this.values,
+  final DateTime tanggal;
+  final double berat;
+  final double tinggi;
+  final double lingkarKepala;
+
+  const GrowthRecord({
+    required this.tanggal,
+    required this.berat,
+    required this.tinggi,
+    required this.lingkarKepala,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'tanggal': tanggal.toIso8601String(),
+        'berat': berat,
+        'tinggi': tinggi,
+        'lingkarKepala': lingkarKepala,
+      };
+
+  factory GrowthRecord.fromJson(Map<String, dynamic> json) {
+    return GrowthRecord(
+      tanggal: DateTime.parse(json['tanggal'] as String),
+      berat: (json['berat'] as num).toDouble(),
+      tinggi: (json['tinggi'] as num).toDouble(),
+      lingkarKepala: (json['lingkarKepala'] as num).toDouble(),
+    );
+  }
+}
+
+class DashboardGrowthResult {
+  final DateTime? tanggalDaftar;
+  final List<GrowthRecord> riwayat;
+
+  const DashboardGrowthResult({
+    required this.tanggalDaftar,
+    required this.riwayat,
   });
 }
 
-// =============================================================
-// CUSTOM PAINTER GRAFIK
-// =============================================================
+class DashboardGrowthStore {
+  static const _pesertaAktifKey =
+      'pelita_dashboard_peserta_aktif';
 
-class _LineChartPainter extends CustomPainter {
-  final _ChartData data;
-  final List<String> labels;
+  static const _tanggalDaftarKey =
+      'pelita_dashboard_tanggal_daftar';
 
-  _LineChartPainter({
-    required this.data,
-    required this.labels,
-  });
+  static String _keyRiwayat(String pesertaId) =>
+      'pelita_dashboard_riwayat_$pesertaId';
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    const leftPad = 34.0;
-    const rightPad = 10.0;
-    const topPad = 8.0;
-    const bottomPad = 22.0;
+  static Future<void> simpan({
+    required String pesertaId,
+    required double berat,
+    required double tinggi,
+    required double lingkarKepala,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final sekarang = DateTime.now();
 
-    final chartW = size.width - leftPad - rightPad;
-    final chartH = size.height - topPad - bottomPad;
+    final key = _keyRiwayat(pesertaId);
+    final riwayat = _baca(prefs.getString(key));
 
-    final gridPaint = Paint()
-      ..color = const Color(0xFF8E94DD)
-      ..strokeWidth = 0.8;
-
-    final textStyle = GoogleFonts.poppins(
-      fontSize: 8,
-      color: const Color(0xFF555555),
+    riwayat.removeWhere(
+      (item) =>
+          item.tanggal.year == sekarang.year &&
+          item.tanggal.month == sekarang.month,
     );
 
-    double yFor(double v) {
-      return topPad +
-          chartH -
-          ((v - data.minY) / (data.maxY - data.minY)) * chartH;
-    }
-
-    // Garis horizontal dan label sumbu Y
-    for (
-      double v = data.minY;
-      v <= data.maxY + 0.001;
-      v += data.step
-    ) {
-      final y = yFor(v);
-
-      canvas.drawLine(
-        Offset(leftPad, y),
-        Offset(size.width - rightPad, y),
-        gridPaint,
-      );
-
-      _drawText(
-        canvas,
-        '${v.toInt()} ${data.unit}',
-        Offset(0, y - 5),
-        textStyle,
-      );
-    }
-
-    // Garis vertikal dan label sumbu X
-    final n = data.values.length;
-    const xInset = 8.0;
-    final usableW = chartW - xInset * 2;
-    final stepX = n > 1 ? usableW / (n - 1) : usableW;
-
-    for (int i = 0; i < n; i++) {
-      final x = leftPad + xInset + stepX * i;
-
-      canvas.drawLine(
-        Offset(x, topPad),
-        Offset(x, topPad + chartH),
-        Paint()
-          ..color = const Color(0xFF8E94DD)
-          ..strokeWidth = 0.6,
-      );
-
-      _drawText(
-        canvas,
-        labels[i],
-        Offset(x - 6, topPad + chartH + 5),
-        textStyle.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      );
-    }
-
-    // Garis data grafik
-    final linePaint = Paint()
-      ..color = PelitaColors.chart
-      ..strokeWidth = 1.8
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path();
-    final points = <Offset>[];
-
-    for (int i = 0; i < n; i++) {
-      final p = Offset(
-        leftPad + xInset + stepX * i,
-        yFor(data.values[i]),
-      );
-
-      points.add(p);
-
-      if (i == 0) {
-        path.moveTo(p.dx, p.dy);
-      } else {
-        path.lineTo(p.dx, p.dy);
-      }
-    }
-
-    canvas.drawPath(path, linePaint);
-
-    // Titik data grafik
-    final dotPaint = Paint()
-      ..color = PelitaColors.chart;
-
-    for (final p in points) {
-      canvas.drawCircle(p, 3.2, dotPaint);
-    }
-  }
-
-  void _drawText(
-    Canvas canvas,
-    String text,
-    Offset offset,
-    TextStyle style,
-  ) {
-    final tp = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: style,
+    riwayat.add(
+      GrowthRecord(
+        tanggal: sekarang,
+        berat: berat,
+        tinggi: tinggi,
+        lingkarKepala: lingkarKepala,
       ),
-      textDirection: TextDirection.ltr,
-    )..layout();
+    );
 
-    tp.paint(canvas, offset);
+    riwayat.sort(
+      (a, b) => a.tanggal.compareTo(b.tanggal),
+    );
+
+    await prefs.setString(
+      key,
+      jsonEncode(riwayat.map((e) => e.toJson()).toList()),
+    );
+
+    await prefs.setString(
+      _pesertaAktifKey,
+      pesertaId,
+    );
+
+    await prefs.setString(
+      _tanggalDaftarKey,
+      sekarang.toIso8601String(),
+    );
   }
 
-  @override
-  bool shouldRepaint(covariant _LineChartPainter old) {
-    return old.data != data || old.labels != labels;
+  static Future<DashboardGrowthResult> ambil() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final pesertaId = prefs.getString(_pesertaAktifKey);
+    final tanggalText = prefs.getString(_tanggalDaftarKey);
+
+    if (pesertaId == null || tanggalText == null) {
+      return const DashboardGrowthResult(
+        tanggalDaftar: null,
+        riwayat: [],
+      );
+    }
+
+    final riwayat = _baca(
+      prefs.getString(_keyRiwayat(pesertaId)),
+    );
+
+    riwayat.sort(
+      (a, b) => a.tanggal.compareTo(b.tanggal),
+    );
+
+    return DashboardGrowthResult(
+      tanggalDaftar: DateTime.parse(tanggalText),
+      riwayat: riwayat.reversed
+          .take(5)
+          .toList()
+          .reversed
+          .toList(),
+    );
+  }
+
+  static List<GrowthRecord> _baca(String? data) {
+    if (data == null || data.isEmpty) return [];
+
+    final list = jsonDecode(data) as List<dynamic>;
+
+    return list
+        .map(
+          (item) => GrowthRecord.fromJson(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
   }
 }

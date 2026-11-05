@@ -4,7 +4,7 @@ import 'dashboard_page.dart';
 import 'profile_page.dart';
 
 class TentangPage extends StatelessWidget {
-  const TentangPage({Key? key}) : super(key: key);
+  const TentangPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +90,7 @@ class TentangPage extends StatelessWidget {
           onTap: (index) {
 
             if (index == 0) {
-              // Jika menekan Home (index 0)
+
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const DashboardPage()), 

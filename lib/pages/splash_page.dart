@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'dashboard_page.dart';
+import 'login_page.dart';
+
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -15,27 +18,66 @@ class _SplashPageState extends State<SplashPage> {
     _checkLoginStatus();
   }
 
-  Future<void> _checkLoginStatus() async {
-    await Future.delayed(const Duration(seconds: 5));
+Future<void> _checkLoginStatus() async {
 
-    if (!mounted) return;
+  await Future.delayed(const Duration(seconds: 10));
 
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+  if (!mounted) return;
 
-      if (!mounted) return;
+  bool isLoggedIn = false;
 
-      Navigator.pushReplacementNamed(
-        context,
-        isLoggedIn ? '/dashboard' : '/login',
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      Navigator.pushReplacementNamed(context, '/login');
-    }
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+  } catch (e) {
+    isLoggedIn = false;
   }
+
+  if (!mounted) return;
+
+  final Widget halamanTujuan = isLoggedIn
+      ? const DashboardPage()
+      : const LoginPage();
+
+  Navigator.of(context).pushReplacement(
+    PageRouteBuilder<void>(
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return halamanTujuan;
+      },
+
+      transitionDuration: const Duration(
+        milliseconds: 750,
+      ),
+
+      reverseTransitionDuration: const Duration(
+        milliseconds: 400,
+      ),
+
+      transitionsBuilder: (
+        context,
+        animation,
+        secondaryAnimation,
+        child,
+      ) {
+        final curvedAnimation = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeInOutCubic,
+        );
+
+        return FadeTransition(
+          opacity: curvedAnimation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.06),
+              end: Offset.zero,
+            ).animate(curvedAnimation),
+            child: child,
+          ),
+        );
+      },
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {

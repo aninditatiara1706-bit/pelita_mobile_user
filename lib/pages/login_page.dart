@@ -1,5 +1,9 @@
+
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import 'register_page.dart';
+import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,8 +18,13 @@ class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  final AuthService authService = AuthService();
+
   bool hidePassword = true;
   bool isLoading = false;
+
+  static const Color _purple = Color(0xFF9449B8);
+  static const Color _pink = Color(0xFFE5507E);
 
   @override
   void dispose() {
@@ -24,40 +33,54 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  // INPUT STYLE
   InputDecoration inputStyle(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(
-        fontSize: 10,
+      hintStyle: GoogleFonts.poppins(
+        fontSize: 14,
+        color: Colors.grey,
       ),
       filled: true,
-      fillColor: const Color(0xFFF5F5F5),
+      fillColor: Colors.transparent,
       contentPadding: const EdgeInsets.symmetric(
-        horizontal: 13,
-        vertical: 14,
+        horizontal: 14,
+        vertical: 12,
       ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(7),
-        borderSide: const BorderSide(
-          color: Color(0xFFD9D9D9),
-        ),
+        borderSide: BorderSide.none,
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(7),
-        borderSide: const BorderSide(
-          color: Color(0xFFD9D9D9),
+      errorStyle: GoogleFonts.poppins(fontSize: 12),
+    );
+  }
+
+  // FIELD DENGAN BORDER GRADASI
+  Widget gradientField({
+    required Widget child,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [_purple, _pink],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
         ),
+        borderRadius: BorderRadius.circular(9),
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(7),
-        borderSide: const BorderSide(
-          color: Color(0xFFB34ABF),
+      padding: const EdgeInsets.all(1.5),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(7.5),
         ),
+        child: child,
       ),
     );
   }
 
-  void login() {
+  // LOGIN KE BACKEND PELITA
+  Future<void> login() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -68,10 +91,57 @@ class _LoginPageState extends State<LoginPage> {
       isLoading = true;
     });
 
-    Navigator.pushReplacementNamed(
-      context,
-      '/dashboard',
-    );
+    try {
+      final result = await authService.login(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
+
+      if (!mounted) return;
+
+      final user = Map<String, dynamic>.from(
+        result['user'] as Map,
+      );
+
+      final userName = user['name'] ?? 'Pengguna';
+      final userRole = user['role'];
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Selamat datang, $userName!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Navigasi setelah login berhasil
+      Navigator.pushReplacementNamed(
+        context,
+        '/dashboard',
+      );
+
+      // Role pengguna tersedia untuk pengembangan
+      // dashboard ADMIN dan KADER berikutnya.
+      debugPrint('Login berhasil');
+      debugPrint('Nama: $userName');
+      debugPrint('Role: $userRole');
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -79,239 +149,211 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Stack(
-          children: [
-
-            Positioned(
-              top: 8,
-              left: 12,
-              child: IconButton(
-                onPressed: () {
-                  Navigator.maybePop(context);
-                },
-                icon: const Icon(
-                  Icons.arrow_back,
-                  size: 29,
-                  color: Colors.black,
-                ),
-              ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 30,
+              vertical: 36,
             ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 380,
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 25),
 
-            Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 30,
-                  vertical: 36,
-                ),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: 380,
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 25),
+                    // JUDUL LOGIN
+                    Text(
+                      'Login',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
 
-                        const Text(
-                          'Login',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
+                    const SizedBox(height: 96),
+
+                    // EMAIL / NO.HP
+                    gradientField(
+                      child: TextFormField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
                         ),
+                        decoration: inputStyle('Email / No.HP'),
+                        validator: (value) {
+                          if (value == null ||
+                              value.trim().isEmpty) {
+                            return 'Email / No.HP wajib diisi';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
 
-                        const SizedBox(height: 96),
+                    const SizedBox(height: 14),
 
-                        TextFormField(
-                          controller: emailController,
-                          keyboardType:
-                              TextInputType.emailAddress,
-                          style: const TextStyle(
-                            fontSize: 12,
-                          ),
-                          decoration: inputStyle(
-                            'Email / No.HP',
-                          ),
-                          validator: (value) {
-                            if (value == null ||
-                                value.trim().isEmpty) {
-                              return 'Email / No.HP wajib diisi';
-                            }
-                            return null;
-                          },
+                    // PASSWORD
+                    gradientField(
+                      child: TextFormField(
+                        controller: passwordController,
+                        obscureText: hidePassword,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
                         ),
-
-                        const SizedBox(height: 14),
-
-                        TextFormField(
-                          controller: passwordController,
-                          obscureText: hidePassword,
-                          style: const TextStyle(
-                            fontSize: 12,
-                          ),
-                          decoration: inputStyle(
-                            'Password',
-                          ).copyWith(
-                            suffixIcon: IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  hidePassword = !hidePassword;
-                                });
-                              },
-                              icon: Icon(
-                                hidePassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                size: 18,
-                              ),
+                        decoration: inputStyle('Password').copyWith(
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                hidePassword = !hidePassword;
+                              });
+                            },
+                            icon: Icon(
+                              hidePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              size: 18,
                             ),
                           ),
-                          validator: (value) {
-                            if (value == null ||
-                                value.isEmpty) {
-                              return 'Password wajib diisi';
-                            }
-                            return null;
-                          },
                         ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Password wajib diisi';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
 
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Fitur lupa password belum tersedia.',
+                    // LUPA PASSWORD
+                    const SizedBox(height: 6),
+                    
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Fitur lupa password belum tersedia.',
+                              ),
+                            ),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 5,
+                          ),
+                          foregroundColor: _purple,
+                          minimumSize: Size.zero,
+                          tapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          'Lupa Password?',
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            color: _purple,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // TOMBOL LOGIN
+                    SizedBox(
+                      height: 45,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xFF9146C6),
+                              Color(0xFFE04491),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: ElevatedButton(
+                          onPressed: isLoading ? null : login,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            disabledBackgroundColor:
+                                Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            foregroundColor: Colors.white,
+                            disabledForegroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(7),
+                            ),
+                          ),
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 19,
+                                  height: 19,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
                                   ),
+                                )
+                              : Text(
+                                  'Masuk',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // DAFTAR
+                    Center(
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        children: [
+                          Text(
+                            'Belum Punya Akun? ',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: Colors.black,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const RegisterPage(),
                                 ),
                               );
                             },
-                            style: TextButton.styleFrom(
-                              padding:
-                                  const EdgeInsets.symmetric(
-                                vertical: 5,
-                              ),
-                              foregroundColor: Colors.black,
-                              minimumSize: Size.zero,
-                              tapTargetSize:
-                                  MaterialTapTargetSize
-                                      .shrinkWrap,
-                            ),
-                            child: const Text(
-                              'Lupa Password?',
-                              style: TextStyle(
-                                fontSize: 10,
-                                decoration:
-                                    TextDecoration.underline,
+                            child: Text(
+                              'Daftar',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                color: _purple,
                               ),
                             ),
                           ),
-                        ),
-
-                        const SizedBox(height: 30),
-
-                        SizedBox(
-                          height: 45,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFF9146C6),
-                                  Color(0xFFE04491),
-                                ],
-                              ),
-                              borderRadius:
-                                  BorderRadius.circular(7),
-                            ),
-                            child: ElevatedButton(
-                              onPressed:
-                                  isLoading ? null : login,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Colors.transparent,
-                                disabledBackgroundColor:
-                                    Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                foregroundColor: Colors.white,
-                                disabledForegroundColor:
-                                    Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(7),
-                                ),
-                              ),
-                              child: isLoading
-                                  ? const SizedBox(
-                                      width: 19,
-                                      height: 19,
-                                      child:
-                                          CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Masuk',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight:
-                                            FontWeight.w600,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        Center(
-                          child: Wrap(
-                            alignment: WrapAlignment.center,
-                            children: [
-                              const Text(
-                                'Belum Punya Akun? ',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const RegisterPage(),
-                                    ),
-                                  );
-                                },
-                                child: const Text(
-                                  'Daftar',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.black,
-                                    decoration:
-                                        TextDecoration.underline,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
