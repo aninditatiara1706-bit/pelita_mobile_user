@@ -140,6 +140,7 @@ class _ProfilePageState extends State<ProfilePage> {
         final peserta = Map<String, dynamic>.from(item);
 
         return Peserta(
+          id: (peserta['id'] ?? '').toString(),
           nama: (peserta['nama'] ?? '-').toString(),
 
           kategori: ubahKategori(
