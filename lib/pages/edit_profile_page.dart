@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/browser_client.dart';
 
 class EditProfilePage extends StatefulWidget {
   final String nama;
@@ -24,10 +27,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late final TextEditingController _namaController;
   late final TextEditingController _teleponController;
   late final TextEditingController _emailController;
+
   late String _selectedAvatar;
+
+  bool _isSaving = false;
 
   static const Color purple = Color(0xFF9449B8);
   static const Color pink = Color(0xFFE0468F);
+
+  static const String baseUrl = 'http://localhost:4000/api';
+
+  // HTTP Client dengan cookie session
+  static final BrowserClient client = BrowserClient()
+    ..withCredentials = true;
 
   final List<String> avatars = [
     'assets/images/avatar_siti.png',
@@ -39,9 +51,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
+
     _namaController = TextEditingController(text: widget.nama);
     _teleponController = TextEditingController(text: widget.telepon);
     _emailController = TextEditingController(text: widget.email);
+
     _selectedAvatar = widget.avatar;
   }
 
@@ -50,9 +64,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _namaController.dispose();
     _teleponController.dispose();
     _emailController.dispose();
+
     super.dispose();
   }
 
+  // ==========================================
+  // INPUT FIELD
+  // ==========================================
   Widget _inputField({
     required String label,
     required TextEditingController controller,
@@ -109,15 +127,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
+  // ==========================================
+  // AVATAR OPTION
+  // ==========================================
   Widget _avatarOption(String path) {
     final selected = _selectedAvatar == path;
 
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedAvatar = path;
-        });
-      },
+      onTap: _isSaving
+          ? null
+          : () {
+              setState(() {
+                _selectedAvatar = path;
+              });
+            },
       child: Container(
         width: 51,
         height: 51,
@@ -141,19 +164,103 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  void _simpanPerubahan() {
+  // ==========================================
+  // UPDATE PROFILE KE BACKEND
+  // ==========================================
+  Future<void> _simpanPerubahan() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    Navigator.pop(context, <String, String>{
-      'nama': _namaController.text.trim(),
-      'telepon': _teleponController.text.trim(),
-      'email': _emailController.text.trim(),
-      'avatar': _selectedAvatar,
+    if (_isSaving) return;
+
+    setState(() {
+      _isSaving = true;
     });
+
+    try {
+      final response = await client.put(
+        Uri.parse('$baseUrl/auth/profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'nama': _namaController.text.trim(),
+          'telepon': _teleponController.text.trim(),
+          'email': _emailController.text.trim(),
+          'avatar': _selectedAvatar,
+        }),
+      );
+
+      final result = jsonDecode(response.body);
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 &&
+          result['success'] == true) {
+        final data = result['data'];
+        final user = data is Map
+            ? (data['user'] is Map ? data['user'] : data)
+            : {};
+
+        final updatedProfile = <String, String>{
+          'nama': (user['name'] ??
+                  _namaController.text.trim())
+              .toString(),
+          'telepon': (user['telepon'] ??
+                  _teleponController.text.trim())
+              .toString(),
+          'email': (user['email'] ??
+                  _emailController.text.trim())
+              .toString(),
+          'avatar': (user['avatar'] ??
+                  _selectedAvatar)
+              .toString(),
+        };
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profil berhasil diperbarui!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pop(context, updatedProfile);
+      } else {
+        final message = result is Map
+            ? result['message']?.toString() ??
+                'Gagal memperbarui profil'
+            : 'Gagal memperbarui profil';
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi kesalahan: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
   }
 
+  // ==========================================
+  // BUILD
+  // ==========================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -167,7 +274,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: IconButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: _isSaving
+                        ? null
+                        : () => Navigator.pop(context),
                     icon: const Icon(
                       Icons.arrow_back,
                       size: 30,
@@ -200,6 +309,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                           const SizedBox(height: 23),
 
+                          // NAMA
                           _inputField(
                             label: 'Nama Lengkap',
                             controller: _namaController,
@@ -212,24 +322,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             },
                           ),
 
+                          // NOMOR HP
                           _inputField(
                             label: 'Nomor HP.',
                             controller: _teleponController,
                             keyboardType: TextInputType.phone,
                             validator: (value) {
                               final nomor = value?.trim() ?? '';
+
                               if (nomor.isEmpty) {
                                 return 'Nomor HP wajib diisi';
                               }
+
                               if (!RegExp(
                                 r'^[0-9+\s-]{9,20}$',
                               ).hasMatch(nomor)) {
                                 return 'Nomor HP tidak valid';
                               }
+
                               return null;
                             },
                           ),
 
+                          // EMAIL
                           _inputField(
                             label: 'Email',
                             controller: _emailController,
@@ -237,15 +352,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 TextInputType.emailAddress,
                             validator: (value) {
                               final email = value?.trim() ?? '';
+
                               if (!RegExp(
                                 r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
                               ).hasMatch(email)) {
                                 return 'Masukkan email yang valid';
                               }
+
                               return null;
                             },
                           ),
 
+                          // AVATAR
                           const Text(
                             'Avatar',
                             style: TextStyle(
@@ -253,6 +371,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
+
                           const SizedBox(height: 6),
 
                           Wrap(
@@ -266,6 +385,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                           const SizedBox(height: 95),
 
+                          // BUTTON SIMPAN
                           SizedBox(
                             width: double.infinity,
                             height: 45,
@@ -278,28 +398,46 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     BorderRadius.circular(8),
                               ),
                               child: ElevatedButton(
-                                onPressed: _simpanPerubahan,
+                                onPressed: _isSaving
+                                    ? null
+                                    : _simpanPerubahan,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor:
+                                      Colors.transparent,
+                                  disabledBackgroundColor:
                                       Colors.transparent,
                                   shadowColor:
                                       Colors.transparent,
                                   foregroundColor: Colors.white,
+                                  disabledForegroundColor:
+                                      Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius:
                                         BorderRadius.circular(8),
                                   ),
                                 ),
-                                child: const Text(
-                                  'Simpan Perubahan',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                child: _isSaving
+                                    ? const SizedBox(
+                                        width: 21,
+                                        height: 21,
+                                        child:
+                                            CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Simpan Perubahan',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight:
+                                              FontWeight.bold,
+                                        ),
+                                      ),
                               ),
                             ),
                           ),
+
                           const SizedBox(height: 30),
                         ],
                       ),

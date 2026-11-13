@@ -1,5 +1,10 @@
+
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../services/auth_service.dart';
 
 import 'change_password_page.dart';
 import 'notification_page.dart';
@@ -15,67 +20,271 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-final List<Peserta> daftarPeserta = [
-  const Peserta(
-    nama: 'Raka',
-    kategori: 'Balita 3 Tahun',
-    tanggalLahir: '12-09-2022',
-    jenisKelamin: 'Laki-Laki',
-    namaOrangTua: 'Siti Nurhaliza',
-    nik: 'XXXXXXXXXX',
-    terakhirDiperiksa: '12 Mei 2026',
-    avatar: Icons.child_care,
-    warnaAvatar: Color(0xFFFFD5C2),
-    berat: [7.2, 8.1, 7.8, 9.4, 9.1, 9.8, 9.5, 10.2, 10.0, 10.8, 10.5, 11.2],
-    tinggiBadan: [72, 77, 76, 83, 86, 85, 89, 91, 90, 94, 96, 98],
-    lingkarKepala: [
-      44.0,
-      45.2,
-      44.8,
-      46.0,
-      45.7,
-      46.5,
-      46.2,
-      47.0,
-      46.8,
-      47.5,
-      47.2,
-      48.0,
-    ],
-  ),
-  const Peserta(
-    nama: 'Sari',
-    kategori: 'Lansia 67 Tahun',
-    tanggalLahir: '15-04-1959',
-    jenisKelamin: 'Perempuan',
-    namaOrangTua: '-',
-    nik: 'XXXXXXXXXX',
-    terakhirDiperiksa: '10 Mei 2026',
-    avatar: Icons.face_3,
-    warnaAvatar: Color(0xFFE8B8AD),
-    berat: [58, 59, 58.5, 60, 59, 60.5, 59.5, 61, 60, 60.8, 59.8, 60.5],
-    tinggiBadan: [158, 158, 158, 158, 158, 158, 158, 158, 158, 158, 158, 158],
-    lingkarKepala: [56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56, 56],
-    sistolik: [138, 142, 135, 145, 140, 136, 144, 139, 133, 141, 137, 134],
-    diastolik: [88, 90, 85, 92, 87, 84, 91, 86, 82, 89, 85, 83],
-    gulaDarah: [145, 153, 140, 158, 148, 136, 155, 143, 139, 151, 142, 137],
-    denyutNadi: [78, 84, 76, 82, 80, 74, 86, 79, 77, 83, 75, 78],
-  ),
-];
-
 class _ProfilePageState extends State<ProfilePage> {
   int _navIndex = 2;
 
-  String nama = 'Siti Nurhaliza';
-  String telepon = '0812 3456 7890';
-  String email = 'siti.nurhaliza@gmail.com';
+  // ===================== DATA PROFIL =====================
 
+  String nama = '';
+  String telepon = '';
+  String email = '';
   String avatarProfil = 'assets/images/avatar_siti.png';
 
-  bool notifikasiAktif = true;
+  bool loadingProfil = true;
+  bool loadingPeserta = true;
+
+  String? errorProfil;
+  String? errorPeserta;
+
+  List<Peserta> daftarPeserta = [];
 
   final Color pink = const Color(0xFFE0468F);
   final Color ungu = const Color(0xFF9449B8);
+
+  // ===================== LOAD SEMUA DATA =====================
+
+  @override
+  void initState() {
+    super.initState();
+    muatDataProfil();
+    muatPeserta();
+  }
+
+  // ===================== AMBIL PROFIL USER =====================
+
+  Future<void> muatDataProfil() async {
+    if (mounted) {
+      setState(() {
+        loadingProfil = true;
+        errorProfil = null;
+      });
+    }
+
+    try {
+      final hasil = await AuthService().getMe();
+
+      // GET /auth/me mengembalikan data user secara langsung.
+      final user = hasil['user'] is Map
+          ? Map<String, dynamic>.from(hasil['user'])
+          : hasil;
+
+      if (!mounted) return;
+
+      setState(() {
+        nama = (user['nama'] ??
+                user['name'] ??
+                user['namaLengkap'] ??
+                '')
+            .toString();
+
+        telepon = (user['telepon'] ??
+                user['noTelepon'] ??
+                user['phone'] ??
+                '')
+            .toString();
+
+        email = (user['email'] ?? '').toString();
+
+        avatarProfil = (user['avatar'] ??
+                'assets/images/avatar_siti.png')
+            .toString();
+
+        loadingProfil = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        loadingProfil = false;
+        errorProfil = e.toString();
+      });
+    }
+  }
+
+  // ===================== AMBIL PESERTA DARI BACKEND =====================
+
+  Future<void> muatPeserta() async {
+    if (mounted) {
+      setState(() {
+        loadingPeserta = true;
+        errorPeserta = null;
+      });
+    }
+
+    try {
+      final response = await AuthService.client
+          .get(
+            Uri.parse(
+              '${AuthService.baseUrl}/peserta/saya',
+            ),
+            headers: {
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 15));
+
+      final responseData =
+          jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode != 200 ||
+          responseData['success'] != true) {
+        throw Exception(
+          responseData['message'] ?? 'Gagal mengambil data peserta',
+        );
+      }
+
+      final List<dynamic> data =
+          responseData['data'] as List<dynamic>? ?? [];
+
+      final pesertaBaru = data.map((item) {
+        final peserta = Map<String, dynamic>.from(item);
+
+        return Peserta(
+          nama: (peserta['nama'] ?? '-').toString(),
+
+          kategori: ubahKategori(
+            (peserta['kategori'] ?? '').toString(),
+          ),
+
+          tanggalLahir: formatTanggal(
+            peserta['tanggalLahir'],
+          ),
+
+          jenisKelamin: ubahJenisKelamin(
+            (peserta['jenisKelamin'] ?? '').toString(),
+          ),
+
+          namaOrangTua: (
+            peserta['namaWali'] ??
+            peserta['namaOrangTua'] ??
+            '-'
+          ).toString(),
+
+          nik: (peserta['nik'] ?? '-').toString(),
+
+          terakhirDiperiksa: '-',
+
+          avatar: iconPeserta(
+            (peserta['kategori'] ?? '').toString(),
+          ),
+
+          warnaAvatar: warnaPeserta(
+            (peserta['kategori'] ?? '').toString(),
+          ),
+
+          // Grafik akan diisi dari data pemeriksaan.
+          berat: const [],
+          tinggiBadan: const [],
+          lingkarKepala: const [],
+
+          sistolik: const [],
+          diastolik: const [],
+          gulaDarah: const [],
+          denyutNadi: const [],
+        );
+      }).toList();
+
+      if (!mounted) return;
+
+      setState(() {
+        daftarPeserta = pesertaBaru;
+        loadingPeserta = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        loadingPeserta = false;
+        errorPeserta = e.toString();
+      });
+    }
+  }
+
+  // ===================== FORMAT KATEGORI =====================
+
+  String ubahKategori(String kategori) {
+    switch (kategori.toUpperCase()) {
+      case 'BALITA':
+        return 'Balita';
+
+      case 'IBU_HAMIL':
+        return 'Ibu Hamil';
+
+      case 'LANSIA':
+        return 'Lansia';
+
+      default:
+        return kategori;
+    }
+  }
+
+  // ===================== FORMAT JENIS KELAMIN =====================
+
+  String ubahJenisKelamin(String jenisKelamin) {
+    switch (jenisKelamin.toUpperCase()) {
+      case 'LAKI_LAKI':
+        return 'Laki-Laki';
+
+      case 'PEREMPUAN':
+        return 'Perempuan';
+
+      default:
+        return jenisKelamin;
+    }
+  }
+
+  // ===================== FORMAT TANGGAL =====================
+
+  String formatTanggal(dynamic tanggal) {
+    if (tanggal == null) return '-';
+
+    try {
+      final date = DateTime.parse(tanggal.toString());
+
+      final hari = date.day.toString().padLeft(2, '0');
+      final bulan = date.month.toString().padLeft(2, '0');
+
+      return '$hari-$bulan-${date.year}';
+    } catch (_) {
+      return tanggal.toString();
+    }
+  }
+
+  // ===================== ICON PESERTA =====================
+
+  IconData iconPeserta(String kategori) {
+    switch (kategori.toUpperCase()) {
+      case 'BALITA':
+        return Icons.child_care;
+
+      case 'IBU_HAMIL':
+        return Icons.pregnant_woman;
+
+      case 'LANSIA':
+        return Icons.elderly;
+
+      default:
+        return Icons.person;
+    }
+  }
+
+  // ===================== WARNA PESERTA =====================
+
+  Color warnaPeserta(String kategori) {
+    switch (kategori.toUpperCase()) {
+      case 'BALITA':
+        return const Color(0xFFFFD5C2);
+
+      case 'IBU_HAMIL':
+        return const Color(0xFFE9D5FF);
+
+      case 'LANSIA':
+        return const Color(0xFFE8B8AD);
+
+      default:
+        return const Color(0xFFDCC6F0);
+    }
+  }
 
   // ===================== EDIT PROFIL =====================
 
@@ -92,125 +301,25 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
 
-    if (!mounted || hasil == null) return;
+    if (!mounted) return;
 
-    setState(() {
-      nama = hasil['nama'] ?? nama;
-      telepon = hasil['telepon'] ?? telepon;
-      email = hasil['email'] ?? email;
-      avatarProfil = hasil['avatar'] ?? avatarProfil;
-    });
+    // Ambil ulang data dari database agar selalu sinkron.
+    await muatDataProfil();
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Profil berhasil diperbarui')));
-  }
+    if (!mounted) return;
 
-  void editProfil() {
-    final namaController = TextEditingController(text: nama);
-    final teleponController = TextEditingController(text: telepon);
-    final emailController = TextEditingController(text: email);
-    final formKey = GlobalKey<FormState>();
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Edit Profil'),
-        content: SizedBox(
-          width: 350,
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: namaController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nama Lengkap',
-                    ),
-                    validator: (value) => value == null || value.trim().isEmpty
-                        ? 'Nama wajib diisi'
-                        : null,
-                  ),
-                  TextFormField(
-                    controller: teleponController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nomor Telepon',
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (value) => value == null || value.trim().isEmpty
-                        ? 'Nomor telepon wajib diisi'
-                        : null,
-                  ),
-                  TextFormField(
-                    controller: emailController,
-                    decoration: const InputDecoration(labelText: 'Email'),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) =>
-                        value != null &&
-                            RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-                                .hasMatch(value.trim())
-                        ? null
-                        : 'Masukkan email yang valid',
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                setState(() {
-                  nama = namaController.text.trim();
-                  telepon = teleponController.text.trim();
-                  email = emailController.text.trim();
-                });
-
-                Navigator.pop(dialogContext);
-                tampilPesan('Profil berhasil diperbarui');
-              }
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
-      ),
-    ).then((_) {
-      namaController.dispose();
-      teleponController.dispose();
-      emailController.dispose();
-    });
+    if (hasil != null) {
+      tampilPesan('Profil berhasil diperbarui');
+    }
   }
 
   // ===================== NOTIFIKASI =====================
 
   void bukaNotifikasi() {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Pengaturan Notifikasi'),
-          content: SwitchListTile(
-            title: const Text('Aktifkan Notifikasi'),
-            value: notifikasiAktif,
-            onChanged: (value) {
-              setState(() => notifikasiAktif = value);
-              setDialogState(() {});
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Selesai'),
-            ),
-          ],
-        ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const NotificationPage(),
       ),
     );
   }
@@ -218,120 +327,168 @@ class _ProfilePageState extends State<ProfilePage> {
   // ===================== UBAH PASSWORD =====================
 
   void ubahPassword() {
-    final passwordBaru = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Ubah Kata Sandi'),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: passwordBaru,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'Kata Sandi Baru'),
-            validator: (value) =>
-                value == null || value.length < 6 ? 'Minimal 6 karakter' : null,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) {
-                Navigator.pop(dialogContext);
-                tampilPesan('Simulasi perubahan kata sandi berhasil');
-              }
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ChangePasswordPage(),
       ),
-    ).then((_) => passwordBaru.dispose());
+    );
   }
 
+  // ===================== PESAN =====================
+
   void tampilPesan(String pesan) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(pesan)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(pesan)),
+    );
   }
 
   // ===================== KARTU PESERTA =====================
 
-  Widget buildPesertaSaya(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Peserta Saya',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+  Widget buildPesertaSaya() {
+    if (loadingPeserta) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 25),
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF9148D8),
+          ),
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: daftarPeserta.map((peserta) {
-            return Padding(
-              padding: const EdgeInsets.only(right: 15),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(15),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ProfilPesertaPage(peserta: peserta),
+      );
+    }
+
+    if (errorPeserta != null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF3F3),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.error_outline,
+              color: Colors.red,
+              size: 28,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Gagal memuat peserta',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              errorPeserta!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 11),
+            ),
+            TextButton(
+              onPressed: muatPeserta,
+              child: const Text('Coba Lagi'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (daftarPeserta.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 25),
+        child: const Column(
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 42,
+              color: Color(0xFFB9A5D0),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Belum ada peserta terdaftar',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.black54,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: daftarPeserta.map((peserta) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(15),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ProfilPesertaPage(peserta: peserta),
+                  ),
+                );
+              },
+              child: Container(
+                width: 91,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(
+                    color: Colors.black87,
+                  ),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 25,
+                      backgroundColor: peserta.warnaAvatar,
+                      child: Icon(
+                        peserta.avatar,
+                        size: 29,
+                        color: Colors.white,
+                      ),
                     ),
-                  );
-                },
-                child: Container(
-                  width: 85,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: Colors.black87),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 25,
-                        backgroundColor: peserta.warnaAvatar,
-                        child: Icon(
-                          peserta.avatar,
-                          size: 30,
-                          color: Colors.white,
-                        ),
+                    const SizedBox(height: 6),
+                    Text(
+                      peserta.nama,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
                       ),
-                      const SizedBox(height: 5),
-                      Text(
-                        peserta.nama,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        peserta.kategori,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                    ],
-                  ),
+                    ),
+                    Text(
+                      peserta.kategori,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                  ],
                 ),
               ),
-            );
-          }).toList(),
-        ),
-      ],
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 
   // ===================== MENU PENGATURAN =====================
 
-  Widget menuPengaturan(IconData ikon, String judul, VoidCallback onTap) {
+  Widget menuPengaturan(
+    IconData ikon,
+    String judul,
+    VoidCallback onTap,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
@@ -341,7 +498,10 @@ class _ProfilePageState extends State<ProfilePage> {
           onTap: onTap,
           borderRadius: BorderRadius.circular(9),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 13,
+              vertical: 12,
+            ),
             decoration: BoxDecoration(
               border: Border.all(color: Colors.black87),
               borderRadius: BorderRadius.circular(9),
@@ -351,7 +511,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 Icon(ikon, size: 21),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(judul, style: const TextStyle(fontSize: 13)),
+                  child: Text(
+                    judul,
+                    style: const TextStyle(fontSize: 13),
+                  ),
                 ),
                 const Icon(Icons.chevron_right),
               ],
@@ -386,7 +549,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const AiAssistantPage()),
+        MaterialPageRoute(
+          builder: (_) => const AiAssistantPage(),
+        ),
       ).then((_) {
         if (mounted) {
           setState(() {
@@ -420,7 +585,6 @@ class _ProfilePageState extends State<ProfilePage> {
               color: Colors.white,
               child: Column(
                 children: [
-                  // GARIS GRADASI KIRI DAN KANAN AI
                   Row(
                     children: [
                       Expanded(
@@ -428,7 +592,10 @@ class _ProfilePageState extends State<ProfilePage> {
                           height: 1.2,
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Color(0xFFE0468F), Color(0xFFC94AB5)],
+                              colors: [
+                                Color(0xFFE0468F),
+                                Color(0xFFC94AB5),
+                              ],
                             ),
                           ),
                         ),
@@ -439,20 +606,28 @@ class _ProfilePageState extends State<ProfilePage> {
                           height: 1.2,
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Color(0xFFC94AB5), Color(0xFF9148D8)],
+                              colors: [
+                                Color(0xFFC94AB5),
+                                Color(0xFF9148D8),
+                              ],
                             ),
                           ),
                         ),
                       ),
                     ],
                   ),
-
                   Expanded(
                     child: Row(
                       children: [
-                        _buildBottomNavItem(index: 0, label: 'Home'),
+                        _buildBottomNavItem(
+                          index: 0,
+                          label: 'Home',
+                        ),
                         const SizedBox(width: 82),
-                        _buildBottomNavItem(index: 2, label: 'Profile'),
+                        _buildBottomNavItem(
+                          index: 2,
+                          label: 'Profile',
+                        ),
                       ],
                     ),
                   ),
@@ -461,7 +636,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
 
-          // TOMBOL AI LITA DI TENGAH
+          // TOMBOL AI LITA
           Positioned(
             top: -18,
             left: 0,
@@ -482,7 +657,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF9148D8).withValues(alpha: 0.25),
+                        color: const Color(0xFF9148D8)
+                            .withValues(alpha: 0.25),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -513,18 +689,25 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // ITEM HOME DAN PROFILE
-  Widget _buildBottomNavItem({required int index, required String label}) {
+
+  Widget _buildBottomNavItem({
+    required int index,
+    required String label,
+  }) {
     final selected = _navIndex == index;
+
     final homeAktif = index == 0 && selected;
     final profileAktif = index == 2 && selected;
+
     final itemAktif = homeAktif || profileAktif;
+
     final itemIcon = homeAktif
         ? Icons.home_rounded
         : profileAktif
-        ? Icons.person_rounded
-        : index == 0
-        ? Icons.home_outlined
-        : Icons.person_outline_rounded;
+            ? Icons.person_rounded
+            : index == 0
+                ? Icons.home_outlined
+                : Icons.person_outline_rounded;
 
     return Expanded(
       child: InkWell(
@@ -544,20 +727,35 @@ class _ProfilePageState extends State<ProfilePage> {
                       ? const LinearGradient(
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
-                          colors: [Color(0xC7E0468F), Color(0xC79148D8)],
+                          colors: [
+                            Color(0xC7E0468F),
+                            Color(0xC79148D8),
+                          ],
                         )
                       : null,
                 ),
                 child: itemAktif
-                    ? Icon(itemIcon, size: 26, color: Colors.white)
+                    ? Icon(
+                        itemIcon,
+                        size: 26,
+                        color: Colors.white,
+                      )
                     : ShaderMask(
                         blendMode: BlendMode.srcIn,
-                        shaderCallback: (bounds) => const LinearGradient(
+                        shaderCallback: (bounds) =>
+                            const LinearGradient(
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
-                          colors: [Color(0xFFE0468F), Color(0xFF9148D8)],
+                          colors: [
+                            Color(0xFFE0468F),
+                            Color(0xFF9148D8),
+                          ],
                         ).createShader(bounds),
-                        child: Icon(itemIcon, size: 26, color: Colors.white),
+                        child: Icon(
+                          itemIcon,
+                          size: 26,
+                          color: Colors.white,
+                        ),
                       ),
               ),
               const SizedBox(height: 1),
@@ -565,8 +763,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 label,
                 style: GoogleFonts.poppins(
                   fontSize: 12,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  color: selected ? const Color(0xFF9148D8) : Colors.black,
+                  fontWeight: selected
+                      ? FontWeight.w600
+                      : FontWeight.w400,
+                  color: selected
+                      ? const Color(0xFF9148D8)
+                      : Colors.black,
                 ),
               ),
             ],
@@ -588,269 +790,272 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             children: [
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      // HEADER PROFIL
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(18, 38, 18, 30),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(colors: [ungu, pink]),
-                        ),
-                        child: Column(
-                          children: [
-                            const Text(
-                              'Profil Saya',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 21,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 23),
+                child: RefreshIndicator(
+                  color: const Color(0xFF9148D8),
+                  onRefresh: () async {
+                    await Future.wait([
+                      muatDataProfil(),
+                      muatPeserta(),
+                    ]);
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      children: [
+                        // HEADER PROFIL
 
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(17),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 4,
-                                    offset: Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 37,
-                                    backgroundColor: const Color(0xFFFFD1AE),
-                                    backgroundImage: AssetImage(avatarProfil),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          nama,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 15,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 7),
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.phone_outlined,
-                                              size: 14,
-                                            ),
-                                            const SizedBox(width: 3),
-                                            Expanded(
-                                              child: Text(
-                                                telepon,
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.mail_outline,
-                                              size: 14,
-                                            ),
-                                            const SizedBox(width: 3),
-                                            Expanded(
-                                              child: Text(
-                                                email,
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  IconButton(
-                                    onPressed: bukaEditProfil,
-                                    icon: const Icon(Icons.edit_square),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // ISI PROFIL
-                      Transform.translate(
-                        offset: const Offset(0, -12),
-                        child: Container(
+                        Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(18),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(24),
+                          padding: const EdgeInsets.fromLTRB(
+                            18,
+                            38,
+                            18,
+                            30,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [ungu, pink],
                             ),
                           ),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Peserta Saya',
+                                'Profil Saya',
                                 style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 21,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 14,
                                 ),
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 23),
 
-                              Row(
-                                children: [
-                                  ...daftarPeserta.map((peserta) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(right: 15),
-                                      child: InkWell(
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  ProfilPesertaPage(
-                                                    peserta: peserta,
-                                                  ),
-                                            ),
-                                          );
-                                        },
-                                        child: Container(
-                                          width: 91,
-                                          padding: const EdgeInsets.all(9),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            border: Border.all(
-                                              color: Colors.black87,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              17,
-                                            ),
-                                          ),
-                                          child: Column(
-                                            children: [
-                                              CircleAvatar(
-                                                radius: 24,
-                                                backgroundColor:
-                                                    peserta.warnaAvatar,
-                                                backgroundImage: AssetImage(
-                                                  peserta.nama == 'Raka'
-                                                      ? 'assets/images/avatar_raka.png'
-                                                      : 'assets/images/avatar_sari.png',
-                                                ),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                peserta.nama,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              Text(
-                                                peserta.kategori,
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }),
-                                ],
-                              ),
+                              // KARTU DATA USER
 
-                              const SizedBox(height: 30),
-                              const Text(
-                                'Pengaturan',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(17),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 37,
+                                      backgroundColor:
+                                          const Color(0xFFFFD1AE),
+                                      backgroundImage:
+                                          avatarProfil.startsWith('http')
+                                              ? NetworkImage(avatarProfil)
+                                              : AssetImage(avatarProfil)
+                                                  as ImageProvider,
+                                    ),
+                                    const SizedBox(width: 10),
+
+                                    Expanded(
+                                      child: loadingProfil
+                                          ? const Padding(
+                                              padding: EdgeInsets.all(10),
+                                              child: LinearProgressIndicator(
+                                                color: Color(0xFF9148D8),
+                                              ),
+                                            )
+                                          : errorProfil != null
+                                              ? Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    const Text(
+                                                      'Gagal memuat profil',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 13,
+                                                      ),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: muatDataProfil,
+                                                      child: const Text(
+                                                        'Coba Lagi',
+                                                      ),
+                                                    ),
+                                                  ],
+                                                )
+                                              : Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      nama.isEmpty
+                                                          ? 'Pengguna PELITA'
+                                                          : nama,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 15,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 7),
+                                                    Row(
+                                                      children: [
+                                                        const Icon(
+                                                          Icons.phone_outlined,
+                                                          size: 14,
+                                                        ),
+                                                        const SizedBox(width: 3),
+                                                        Expanded(
+                                                          child: Text(
+                                                            telepon.isEmpty
+                                                                ? '-'
+                                                                : telepon,
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 12,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Row(
+                                                      children: [
+                                                        const Icon(
+                                                          Icons.mail_outline,
+                                                          size: 14,
+                                                        ),
+                                                        const SizedBox(width: 3),
+                                                        Expanded(
+                                                          child: Text(
+                                                            email.isEmpty
+                                                                ? '-'
+                                                                : email,
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 11,
+                                                            ),
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                    ),
+
+                                    IconButton(
+                                      onPressed: loadingProfil
+                                          ? null
+                                          : bukaEditProfil,
+                                      icon: const Icon(Icons.edit_square),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 15),
-
-                              menuPengaturan(
-                                Icons.password,
-                                'Ubah Kata Sandi',
-                                () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const ChangePasswordPage(),
-                                    ),
-                                  );
-                                },
-                              ),
-
-                              menuPengaturan(
-                                Icons.notifications_none,
-                                'Notifikasi',
-                                () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const NotificationPage(),
-                                    ),
-                                  );
-                                },
-                              ),
-
-                              menuPengaturan(
-                                Icons.smart_toy_outlined,
-                                'Tentang Posyandu',
-                                () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const AiAssistantPage(),
-                                    ),
-                                  );
-                                },
-                              ),
-
-                              menuPengaturan(Icons.logout, 'Logout', () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const LogoutPage(),
-                                  ),
-                                );
-                              }),
                             ],
                           ),
                         ),
-                      ),
-                    ],
+
+                        // ISI PROFIL
+
+                        Transform.translate(
+                          offset: const Offset(0, -12),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(18),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(24),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Peserta Saya',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 10),
+
+                                buildPesertaSaya(),
+
+                                const SizedBox(height: 30),
+
+                                const Text(
+                                  'Pengaturan',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 15),
+
+                                menuPengaturan(
+                                  Icons.password,
+                                  'Ubah Kata Sandi',
+                                  ubahPassword,
+                                ),
+
+                                menuPengaturan(
+                                  Icons.notifications_none,
+                                  'Notifikasi',
+                                  bukaNotifikasi,
+                                ),
+
+                                menuPengaturan(
+                                  Icons.smart_toy_outlined,
+                                  'Tentang Posyandu',
+                                  () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const AiAssistantPage(),
+                                      ),
+                                    );
+                                  },
+                                ),
+
+                                menuPengaturan(
+                                  Icons.logout,
+                                  'Logout',
+                                  () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const LogoutPage(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
 
               // NAVBAR
+
               _buildBottomNav(),
             ],
           ),
