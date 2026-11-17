@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'pages/splash_page.dart';
-import 'pages/login_page.dart';
-import 'pages/profile_page.dart';
+import 'features/auth/models/login_page.dart';
 import 'pages/dashboard_page.dart';
-import 'pages/riwayat_pelayanan_page.dart';
+import 'pages/profile_page.dart';
+import 'services/api_service.dart';
+
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
   runApp(const MyApp());
+
+  ApiService.testConnection();
 }
 
 class MyApp extends StatelessWidget {
@@ -18,6 +23,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'PELITA',
       debugShowCheckedModeBanner: false,
+
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFFE0468F),
@@ -26,7 +32,9 @@ class MyApp extends StatelessWidget {
         fontFamily: GoogleFonts.poppins().fontFamily,
         scaffoldBackgroundColor: Colors.white,
       ),
+
       initialRoute: '/',
+
       routes: {
         '/': (context) => const SplashPage(),
         '/login': (context) => const LoginPage(),
