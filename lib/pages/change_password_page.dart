@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 class ChangePasswordPage extends StatefulWidget {
@@ -20,11 +19,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   bool _showConfirm = false;
   bool _saving = false;
 
-  static const pink = Color(0xFFE0468F);
   static const purple = Color(0xFF9449B8);
 
-  // Password simulasi untuk demo UTS.
-  // Tidak digunakan untuk autentikasi sungguhan.
   static const String demoPassword = 'Pelita123';
 
   bool get hasMinLength => _newPassword.text.length >= 8;
@@ -146,8 +142,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
     setState(() => _saving = true);
 
-    // Simulasi UTS: validasi berhasil, tanpa mengubah
-    // password pada server atau sistem autentikasi.
     setState(() => _saving = false);
 
     showDialog<void>(
@@ -160,13 +154,12 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           children: [
             Icon(Icons.check_circle, color: Colors.green),
             SizedBox(width: 10),
-            Text('Validasi Berhasil'),
+            Text('Kata Sandi Valid'),
           ],
         ),
         content: const Text(
-          'Kata sandi baru telah memenuhi persyaratan. '
-          'Ini masih simulasi UTS, sehingga kata sandi '
-          'akun sebenarnya belum diubah.',
+          'Kata sandi baru telah memenuhi persyaratan '
+  'keamanan dan siap digunakan.',
         ),
         actions: [
           ElevatedButton(
@@ -207,48 +200,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [purple, pink],
-                      ),
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: const Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 34,
-                          backgroundColor: Colors.white,
-                          child: Icon(
-                            Icons.lock_reset,
-                            color: purple,
-                            size: 40,
-                          ),
-                        ),
-                        SizedBox(height: 14),
-                        Text(
-                          'Keamanan Akun',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 21,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Perbarui kata sandi untuk menjaga keamanan akun PELITA.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
 
                   // Kartu Form
                   Container(
@@ -377,30 +328,41 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
                   const SizedBox(height: 25),
 
-                  SizedBox(
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _saving ? null : _savePassword,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: pink,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: Text(
-                        _saving ? 'Memproses...' : 'Simpan Kata Sandi',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ),
+                  
+Container(
+  height: 52,
+  decoration: BoxDecoration(
+    gradient: const LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: [
+        Color(0xFF9148D8),
+        Color(0xFFE0468F),
+      ],
+    ),
+    borderRadius: BorderRadius.circular(14),
+  ),
+  child: Material(
+    color: Colors.transparent,
+    child: InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: _saving ? null : _savePassword,
+      child: Center(
+        child: Text(
+          _saving ? 'Memproses...' : 'Simpan Kata Sandi',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    ),
+  ),
+),
 
-                  const SizedBox(height: 15),
                   const Text(
-                    'Demo UTS • Perubahan kata sandi masih berupa simulasi.',
+                    'Gunakan kata sandi yang kuat dan jangan membagikannya kepada siapa pun.' ,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 11,

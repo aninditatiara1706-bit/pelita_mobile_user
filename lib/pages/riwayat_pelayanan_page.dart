@@ -1,11 +1,59 @@
 import 'package:flutter/material.dart';
-import 'detail_riwayat_pelayanan_page.dart'; 
+import 'detail_riwayat_pelayanan_page.dart';
 
-class RiwayatPelayananPage extends StatelessWidget {
-  const RiwayatPelayananPage({Key? key}) : super(key: key);
+class RiwayatPelayananPage extends StatefulWidget {
+  const RiwayatPelayananPage({super.key});
+
+  @override
+  State<RiwayatPelayananPage> createState() =>
+      _RiwayatPelayananPageState();
+}
+
+class _RiwayatPelayananPageState
+    extends State<RiwayatPelayananPage> {
+
+  String _searchQuery = '';
+
+  final List<Map<String, String>> _riwayat = [
+    {
+      'name': 'Raka',
+      'category': 'Balita',
+      'date': '20 September 2026',
+      'location': 'Posyandu Melati',
+      'avatar': 'assets/images/avatar_raka.png',
+    },
+    {
+      'name': 'Sari',
+      'category': 'Lansia',
+      'date': '1 Oktober 2026',
+      'location': 'Posyandu Melati',
+      'avatar': 'assets/images/avatar_sari.png',
+    },
+    {
+      'name': 'Sari',
+      'category': 'Lansia',
+      'date': '12 Oktober 2026',
+      'location': 'Posyandu Melati',
+      'avatar': 'assets/images/avatar_sari.png',
+    },
+    {
+      'name': 'Raka',
+      'category': 'Balita',
+      'date': '20 Oktober 2026',
+      'location': 'Posyandu Melati',
+      'avatar': 'assets/images/avatar_raka.png',
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
+
+    final hasilPencarian = _riwayat.where((item) {
+      final nama = item['name']!.toLowerCase();
+
+      return nama.contains(_searchQuery);
+    }).toList();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -29,6 +77,7 @@ class RiwayatPelayananPage extends StatelessWidget {
                   color: Colors.black,
                 ),
               ),
+
               const SizedBox(height: 20),
 
               const Center(
@@ -41,18 +90,29 @@ class RiwayatPelayananPage extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 20),
 
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(
+                    color: Colors.grey.shade300,
+                  ),
                 ),
-                child: const TextField(
-                  decoration: InputDecoration(
+                child: TextField(
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery =
+                          value.toLowerCase().trim();
+                    });
+                  },
+                  decoration: const InputDecoration(
                     hintText: 'Cari nama peserta....',
-                    hintStyle: TextStyle(color: Colors.grey),
+                    hintStyle: TextStyle(
+                      color: Colors.grey,
+                    ),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 20,
@@ -65,45 +125,39 @@ class RiwayatPelayananPage extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 24),
 
               Expanded(
-                child: ListView(
-                  children: [
-                    _buildHistoryCard(
-                      context: context,
-                      name: 'Raka',
-                      category: 'Balita',
-                      date: '20 September 2026',
-                      location: 'Posyandu Melati',
-                      avatar: 'assets/images/avatar_raka.png',
-                    ),
-                    _buildHistoryCard(
-                      context: context,
-                      name: 'Sari',
-                      category: 'Lansia',
-                      date: '1 Oktober 2026',
-                      location: 'Posyandu Melati',
-                      avatar: 'assets/images/avatar_sari.png',
-                    ),
-                    _buildHistoryCard(
-                      context: context,
-                      name: 'Sari',
-                      category: 'Lansia',
-                      date: '12 Oktober 2026',
-                      location: 'Posyandu Melati',
-                      avatar: 'assets/images/avatar_sari.png',
-                    ),
-                    _buildHistoryCard(
-                      context: context,
-                      name: 'Raka',
-                      category: 'Balita',
-                      date: '20 Oktober 2026',
-                      location: 'Posyandu Melati',
-                      avatar: 'assets/images/avatar_raka.png',
-                    ),
-                  ],
-                ),
+                child: hasilPencarian.isEmpty
+
+                    ? const Center(
+                        child: Text(
+                          'Riwayat tidak ditemukan',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      )
+
+                    : ListView.builder(
+                        itemCount: hasilPencarian.length,
+                        itemBuilder: (context, index) {
+
+                          final item =
+                              hasilPencarian[index];
+
+                          return _buildHistoryCard(
+                            context: context,
+                            name: item['name']!,
+                            category: item['category']!,
+                            date: item['date']!,
+                            location: item['location']!,
+                            avatar: item['avatar']!,
+                          );
+                        },
+                      ),
               ),
             ],
           ),
@@ -125,7 +179,8 @@ class RiwayatPelayananPage extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const DetailRiwayatPelayananPage(),
+            builder: (context) =>
+                const DetailRiwayatPelayananPage(),
           ),
         );
       },
@@ -135,7 +190,9 @@ class RiwayatPelayananPage extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.black54),
+          border: Border.all(
+            color: Colors.black54,
+          ),
         ),
         child: Row(
           children: [
@@ -145,11 +202,13 @@ class RiwayatPelayananPage extends StatelessWidget {
               backgroundColor: Colors.brown.shade200,
               backgroundImage: AssetImage(avatar),
             ),
+
             const SizedBox(width: 16),
 
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   Text(
                     name,
