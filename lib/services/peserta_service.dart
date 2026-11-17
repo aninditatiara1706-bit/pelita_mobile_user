@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'auth_service.dart';
 
 class PesertaService {
-  static const String baseUrl = 'http://localhost:4000/api';
+  static final String baseUrl = AuthService.baseUrl;
 
   // Mengambil peserta milik akun yang sedang login
   Future<List<Map<String, dynamic>>> getMyParticipants() async {

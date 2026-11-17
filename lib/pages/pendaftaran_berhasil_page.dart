@@ -1,39 +1,52 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'nomor_antrean_page.dart';
 
 class PendaftaranBerhasilPage extends StatelessWidget {
   final String namaPeserta;
+  final String kategori;
+  final String keteranganKategori;
   final String tanggal;
   final String waktu;
+  final String lokasi;
+  final String nomorAntrean;
+  final String antreanId;
 
   const PendaftaranBerhasilPage({
     super.key,
     required this.namaPeserta,
+    required this.kategori,
+    required this.keteranganKategori,
     required this.tanggal,
     required this.waktu,
+    required this.lokasi,
+    required this.nomorAntrean,
+    required this.antreanId,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isRaka = namaPeserta.toLowerCase() == 'raka';
-
-    final keterangan = isRaka
-    ? 'Balita 3 Tahun'
-    : 'Lansia 65 Tahun';
-
-    final gambar = isRaka
-        ? 'assets/images/avatar_raka.png'
-        : 'assets/images/avatar_sari.png';
-
-    final layanan = isRaka
-        ? 'Pelayanan Balita'
-        : 'Pelayanan Lansia';
-
-    final iconLayanan = isRaka
-        ? 'assets/images/icon_balita_pendaftaran.png'
-        : 'assets/images/icon_lansia_pendaftaran.png';
+    final layanan = switch (kategori.toUpperCase()) {
+      'BALITA' => 'Pelayanan Balita',
+      'IBU_HAMIL' => 'Pelayanan Ibu Hamil',
+      'LANSIA' => 'Pelayanan Lansia',
+      _ => 'Pelayanan Posyandu',
+    };
+    final avatarPeserta = switch (kategori.toUpperCase()) {
+      'BALITA' => 'assets/images/avatar_raka.png',
+      'IBU_HAMIL' => 'assets/images/avatar_siti.png',
+      'LANSIA' => 'assets/images/avatar_sari.png',
+      _ => 'assets/images/avatar_4.png',
+    };
+    final iconLayanan = switch (kategori.toUpperCase()) {
+      'BALITA' => 'assets/images/icon_balita_pendaftaran.png',
+      'IBU_HAMIL' => 'assets/images/icon_ibuhamil.png',
+      'LANSIA' => 'assets/images/icon_lansia_pendaftaran.png',
+      _ => null,
+    };
 
     const pink = Color(0xFFD24BD8);
 
@@ -44,14 +57,10 @@ class PendaftaranBerhasilPage extends StatelessWidget {
           builder: (context, constraints) {
             return SingleChildScrollView(
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      24, 22, 24, 24,
-                    ),
+                    padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
                     child: Column(
                       children: [
                         const SizedBox(height: 10),
@@ -90,8 +99,7 @@ class PendaftaranBerhasilPage extends StatelessWidget {
                           padding: const EdgeInsets.all(17),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius:
-                                BorderRadius.circular(17),
+                            borderRadius: BorderRadius.circular(17),
                             border: Border.all(
                               color: const Color(0xFF555555),
                               width: 0.9,
@@ -99,15 +107,12 @@ class PendaftaranBerhasilPage extends StatelessWidget {
                           ),
                           child: Column(
                             children: [
-
                               Row(
                                 children: [
                                   CircleAvatar(
                                     radius: 26,
-                                    backgroundColor:
-                                        const Color(0xFFF2F2F2),
-                                    backgroundImage:
-                                        AssetImage(gambar),
+                                    backgroundColor: const Color(0xFFF2F2F2),
+                                    backgroundImage: AssetImage(avatarPeserta),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
@@ -119,12 +124,11 @@ class PendaftaranBerhasilPage extends StatelessWidget {
                                           namaPeserta,
                                           style: GoogleFonts.poppins(
                                             fontSize: 15,
-                                            fontWeight:
-                                                FontWeight.w600,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                         Text(
-                                          keterangan,
+                                          keteranganKategori,
                                           style: GoogleFonts.poppins(
                                             fontSize: 12,
                                           ),
@@ -138,18 +142,23 @@ class PendaftaranBerhasilPage extends StatelessWidget {
                               const SizedBox(height: 20),
 
                               _infoRow(
-                                icon: Image.asset(
-                                  iconLayanan,
-                                  width: 29,
-                                  height: 29,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (_, _, _) =>
-                                      const Icon(
-                                    Icons.people,
-                                    color: pink,
-                                    size: 29,
-                                  ),
-                                ),
+                                icon: iconLayanan == null
+                                    ? const Icon(
+                                        Icons.people,
+                                        color: pink,
+                                        size: 29,
+                                      )
+                                    : Image.asset(
+                                        iconLayanan,
+                                        width: 29,
+                                        height: 29,
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (_, _, _) => const Icon(
+                                          Icons.people,
+                                          color: pink,
+                                          size: 29,
+                                        ),
+                                      ),
                                 judul: 'Layanan',
                                 isi: layanan,
                               ),
@@ -175,7 +184,7 @@ class PendaftaranBerhasilPage extends StatelessWidget {
                                   color: pink,
                                 ),
                                 judul: 'Lokasi',
-                                isi: 'Posyandu Melati',
+                                isi: lokasi,
                               ),
                             ],
                           ),
@@ -189,42 +198,36 @@ class PendaftaranBerhasilPage extends StatelessWidget {
                           height: 52,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFF9148D8),
-                                Color(0xFFE0468F),
-                              ],
+                              colors: [Color(0xFF9148D8), Color(0xFFE0468F)],
                             ),
-                            borderRadius:
-                                BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              borderRadius:
-                                  BorderRadius.circular(16),
-                              
-onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => NomorAntreanPage(
-        tanggal: tanggal,
-        waktu: waktu,
-        namaPeserta: namaPeserta,
-        nomorAntrean: 'A-12',
-        namaPosyandu: 'Posyandu Rw 03',
-      ),
-    ),
-  );
-},
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => NomorAntreanPage(
+                                      tanggal: tanggal,
+                                      waktu: waktu,
+                                      namaPeserta: namaPeserta,
+                                      nomorAntrean: nomorAntrean,
+                                      namaPosyandu: lokasi,
+                                      antreanId: antreanId,
+                                    ),
+                                  ),
+                                );
+                              },
 
                               child: Center(
                                 child: Text(
                                   'Ambil Nomor Antrean',
                                   style: GoogleFonts.poppins(
                                     fontSize: 15,
-                                    fontWeight:
-                                        FontWeight.w600,
+                                    fontWeight: FontWeight.w600,
                                     color: Colors.white,
                                   ),
                                 ),
@@ -252,11 +255,7 @@ onTap: () {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 32,
-          height: 34,
-          child: Center(child: icon),
-        ),
+        SizedBox(width: 32, height: 34, child: Center(child: icon)),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -264,10 +263,7 @@ onTap: () {
             children: [
               Text(
                 judul,
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  color: Colors.black,
-                ),
+                style: GoogleFonts.poppins(fontSize: 13, color: Colors.black),
               ),
               Text(
                 isi,
@@ -289,12 +285,10 @@ class AnimatedSuccessCheck extends StatefulWidget {
   const AnimatedSuccessCheck({super.key});
 
   @override
-  State<AnimatedSuccessCheck> createState() =>
-      _AnimatedSuccessCheckState();
+  State<AnimatedSuccessCheck> createState() => _AnimatedSuccessCheckState();
 }
 
-class _AnimatedSuccessCheckState
-    extends State<AnimatedSuccessCheck>
+class _AnimatedSuccessCheckState extends State<AnimatedSuccessCheck>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
@@ -323,20 +317,15 @@ class _AnimatedSuccessCheckState
       builder: (context, child) {
         final nilai = _controller.value;
 
-        final bounce = ((nilai - 0.70) / 0.30)
-            .clamp(0.0, 1.0)
-            .toDouble();
+        final bounce = ((nilai - 0.70) / 0.30).clamp(0.0, 1.0).toDouble();
 
-        final scale =
-            0.94 + 0.06 * Curves.elasticOut.transform(bounce);
+        final scale = 0.94 + 0.06 * Curves.elasticOut.transform(bounce);
 
         return Transform.scale(
           scale: scale,
           child: CustomPaint(
             size: const Size(140, 140),
-            painter: _SuccessCheckPainter(
-              progress: nilai,
-            ),
+            painter: _SuccessCheckPainter(progress: nilai),
           ),
         );
       },
@@ -351,39 +340,24 @@ class _SuccessCheckPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(
-      size.width / 2,
-      size.height / 2,
-    );
+    final center = Offset(size.width / 2, size.height / 2);
 
     const radius = 53.0;
 
-    final circleProgress =
-        (progress / 0.55).clamp(0.0, 1.0).toDouble();
+    final circleProgress = (progress / 0.55).clamp(0.0, 1.0).toDouble();
 
     final circlePaint = Paint()
       ..shader = const LinearGradient(
-        colors: [
-          Color(0xFF7F3DB8),
-          Color(0xFFE0468F),
-        ],
+        colors: [Color(0xFF7F3DB8), Color(0xFFE0468F)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-      ).createShader(
-        Rect.fromCircle(
-          center: center,
-          radius: radius,
-        ),
-      )
+      ).createShader(Rect.fromCircle(center: center, radius: radius))
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round;
 
     canvas.drawArc(
-      Rect.fromCircle(
-        center: center,
-        radius: radius,
-      ),
+      Rect.fromCircle(center: center, radius: radius),
       -math.pi / 2,
       2 * math.pi * circleProgress,
       false,
@@ -392,10 +366,7 @@ class _SuccessCheckPainter extends CustomPainter {
 
     if (progress <= 0.55) return;
 
-    final checkProgress =
-        ((progress - 0.55) / 0.35)
-            .clamp(0.0, 1.0)
-            .toDouble();
+    final checkProgress = ((progress - 0.55) / 0.35).clamp(0.0, 1.0).toDouble();
 
     final checkPaint = Paint()
       ..color = const Color(0xFF64328F)
@@ -404,35 +375,20 @@ class _SuccessCheckPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
-    final start = Offset(
-      center.dx - 24,
-      center.dy + 1,
-    );
+    final start = Offset(center.dx - 24, center.dy + 1);
 
-    final middle = Offset(
-      center.dx - 6,
-      center.dy + 18,
-    );
+    final middle = Offset(center.dx - 6, center.dy + 18);
 
-    final end = Offset(
-      center.dx + 31,
-      center.dy - 26,
-    );
+    final end = Offset(center.dx + 31, center.dy - 26);
 
-    final firstPart =
-        (checkProgress / 0.4).clamp(0.0, 1.0).toDouble();
+    final firstPart = (checkProgress / 0.4).clamp(0.0, 1.0).toDouble();
 
-    canvas.drawLine(
-      start,
-      Offset.lerp(start, middle, firstPart)!,
-      checkPaint,
-    );
+    canvas.drawLine(start, Offset.lerp(start, middle, firstPart)!, checkPaint);
 
     if (checkProgress > 0.4) {
-      final secondPart =
-          ((checkProgress - 0.4) / 0.6)
-              .clamp(0.0, 1.0)
-              .toDouble();
+      final secondPart = ((checkProgress - 0.4) / 0.6)
+          .clamp(0.0, 1.0)
+          .toDouble();
 
       canvas.drawLine(
         middle,
@@ -447,5 +403,3 @@ class _SuccessCheckPainter extends CustomPainter {
     return old.progress != progress;
   }
 }
-
-

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'profile_page.dart';
@@ -10,7 +12,9 @@ import 'layanan_balita.dart';
 import 'layanan_ibu_hamil.dart';
 import 'layanan_lansia.dart';
 import 'riwayat_pelayanan_page.dart';
+
 import 'package:fl_chart/fl_chart.dart';
+
 import 'daftar_posyandu_page.dart';
 import 'pantau_antrean_page.dart';
 
@@ -55,18 +59,15 @@ class _DashboardPageState extends State<DashboardPage> {
       targetPage: LayananLansiaPage(),
     ),
     _MenuItem(
-  'Booking\nAntrean',
-  'icon_booking.png',
-  targetPage: DaftarPosyanduPage(),
-),
-_MenuItem(
-  'Antrean',
-  'icon_antrean_dashboard.png',
-  targetPage: PantauAntreanPage(
-    nomorAntrean: 'A-12',
-    namaPeserta: 'Raka',
-  ),
-),
+      'Booking\nAntrean',
+      'icon_booking.png',
+      targetPage: DaftarPosyanduPage(),
+    ),
+    _MenuItem(
+      'Antrean',
+      'icon_antrean_dashboard.png',
+      targetPage: PantauAntreanPage(),
+    ),
     _MenuItem(
       'Riwayat',
       'icon_riwayat_dashboard.png',
@@ -78,9 +79,18 @@ _MenuItem(
   DateTime? _tanggalDaftarTerakhir;
 
   static const List<String> _namaBulan = [
-    'Jan', 'Feb', 'Mar', 'Apr',
-    'Mei', 'Jun', 'Jul', 'Agu',
-    'Sep', 'Okt', 'Nov', 'Des',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'Mei',
+    'Jun',
+    'Jul',
+    'Agu',
+    'Sep',
+    'Okt',
+    'Nov',
+    'Des',
   ];
 
   @override
@@ -89,7 +99,6 @@ _MenuItem(
     _muatGrafik();
   }
 
-  
   Future<void> _muatGrafik() async {
     final sekarang = DateTime.now();
 
@@ -134,18 +143,11 @@ _MenuItem(
     });
   }
 
-
   bool get _tampilkanGrafik {
     return _tanggalDaftarTerakhir != null &&
-        DateUtils.isSameDay(
-          _tanggalDaftarTerakhir,
-          DateTime.now(),
-        ) &&
+        DateUtils.isSameDay(_tanggalDaftarTerakhir, DateTime.now()) &&
         _riwayatPertumbuhan.isNotEmpty;
   }
-
-  
-
 
   @override
   Widget build(BuildContext context) {
@@ -158,15 +160,14 @@ _MenuItem(
               padding: EdgeInsets.zero,
               child: Column(
                 children: [
-  _buildHeader(),
+                  _buildHeader(),
 
-  const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-  if (_tampilkanGrafik)
-    _buildGrowthChartCard(),
+                  if (_tampilkanGrafik) _buildGrowthChartCard(),
 
-  const SizedBox(height: 20),
-],
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
           ),
@@ -191,10 +192,7 @@ _MenuItem(
             gradient: LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
-              colors: [
-                PelitaColors.purple,
-                PelitaColors.pink,
-              ],
+              colors: [PelitaColors.purple, PelitaColors.pink],
             ),
           ),
           child: SafeArea(
@@ -269,16 +267,9 @@ _MenuItem(
 
         // Kartu menu
         Padding(
-  padding: const EdgeInsets.only(
-    top: 185,
-    left: 12,
-    right: 12,
-  ),
+          padding: const EdgeInsets.only(top: 185, left: 12, right: 12),
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              vertical: 18,
-              horizontal: 8,
-            ),
+            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(26),
@@ -294,8 +285,7 @@ _MenuItem(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _menus.length,
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
                 mainAxisSpacing: 10,
                 crossAxisSpacing: 4,
@@ -308,10 +298,7 @@ _MenuItem(
           ),
         ),
 
-const SizedBox(
-  height: 455,
-  width: double.infinity,
-),
+        const SizedBox(height: 455, width: double.infinity),
       ],
     );
   }
@@ -320,51 +307,47 @@ const SizedBox(
   // IKON NOTIFIKASI
   // =========================================================
 
-  
-Widget _buildBell() {
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const NotificationPage(),
-        ),
-      );
-    },
-    child: Stack(
-      clipBehavior: Clip.none,
-      children: [
-        const Icon(
-          Icons.notifications_none_rounded,
-          color: Colors.white,
-          size: 32,
-        ),
-        Positioned(
-          right: -2,
-          top: -4,
-          child: Container(
-            width: 17,
-            height: 17,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: Color(0xFFE53935),
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              '2',
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
+  Widget _buildBell() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationPage()),
+        );
+      },
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Icon(
+            Icons.notifications_none_rounded,
+            color: Colors.white,
+            size: 32,
+          ),
+          Positioned(
+            right: -2,
+            top: -4,
+            child: Container(
+              width: 17,
+              height: 17,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE53935),
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                '2',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
+        ],
+      ),
+    );
+  }
 
   // =========================================================
   // ITEM MENU
@@ -379,9 +362,7 @@ Widget _buildBell() {
         if (item.targetPage != null) {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => item.targetPage!,
-            ),
+            MaterialPageRoute(builder: (context) => item.targetPage!),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -433,7 +414,6 @@ Widget _buildBell() {
   // GRAFIK PERTUMBUHAN
   // =========================================================
 
-  
   Widget _buildGrowthChartCard() {
     return GestureDetector(
       onHorizontalDragEnd: (details) {
@@ -455,9 +435,7 @@ Widget _buildBell() {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFFE3DFF0),
-          ),
+          border: Border.all(color: const Color(0xFFE3DFF0)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.06),
@@ -515,19 +493,12 @@ Widget _buildBell() {
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeInOut,
         margin: const EdgeInsets.only(right: 6),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 10,
-          vertical: 7,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
-          color: aktif
-              ? const Color(0xFF9148D8)
-              : Colors.white,
+          color: aktif ? const Color(0xFF9148D8) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: aktif
-                ? const Color(0xFF9148D8)
-                : const Color(0xFFC9D2F8),
+            color: aktif ? const Color(0xFF9148D8) : const Color(0xFFC9D2F8),
           ),
         ),
         child: Text(
@@ -535,9 +506,7 @@ Widget _buildBell() {
           style: GoogleFonts.poppins(
             fontSize: 10,
             fontWeight: FontWeight.w500,
-            color: aktif
-                ? Colors.white
-                : const Color(0xFF818DDC),
+            color: aktif ? Colors.white : const Color(0xFF818DDC),
           ),
         ),
       ),
@@ -549,27 +518,23 @@ Widget _buildBell() {
 
     final bulan = List.generate(
       5,
-      (index) => DateTime(
-        sekarang.year,
-        sekarang.month - 4 + index,
-        1,
-      ),
+      (index) => DateTime(sekarang.year, sekarang.month - 4 + index, 1),
     );
 
-    final labels = bulan
-        .map((item) => _namaBulan[item.month - 1])
-        .toList();
+    final labels = bulan.map((item) => _namaBulan[item.month - 1]).toList();
 
     final unit = _selectedChip == 0 ? 'kg' : 'cm';
 
     final titik = <FlSpot>[];
 
     for (int i = 0; i < bulan.length; i++) {
-      final dataBulan = _riwayatPertumbuhan.where(
-        (item) =>
-            item.tanggal.year == bulan[i].year &&
-            item.tanggal.month == bulan[i].month,
-      ).toList();
+      final dataBulan = _riwayatPertumbuhan
+          .where(
+            (item) =>
+                item.tanggal.year == bulan[i].year &&
+                item.tanggal.month == bulan[i].month,
+          )
+          .toList();
 
       if (dataBulan.isEmpty) continue;
 
@@ -578,8 +543,8 @@ Widget _buildBell() {
       final nilai = _selectedChip == 0
           ? item.berat
           : _selectedChip == 1
-              ? item.tinggi
-              : item.lingkarKepala;
+          ? item.tinggi
+          : item.lingkarKepala;
 
       titik.add(FlSpot(i.toDouble(), nilai));
     }
@@ -587,21 +552,15 @@ Widget _buildBell() {
     if (titik.isEmpty) {
       return const SizedBox(
         height: 200,
-        child: Center(
-          child: Text('Belum ada data pemeriksaan'),
-        ),
+        child: Center(child: Text('Belum ada data pemeriksaan')),
       );
     }
 
     final nilaiY = titik.map((e) => e.y).toList();
 
-    final terendah = nilaiY.reduce(
-      (a, b) => a < b ? a : b,
-    );
+    final terendah = nilaiY.reduce((a, b) => a < b ? a : b);
 
-    final tertinggi = nilaiY.reduce(
-      (a, b) => a > b ? a : b,
-    );
+    final tertinggi = nilaiY.reduce((a, b) => a > b ? a : b);
 
     final selisih = tertinggi - terendah;
     final jarak = selisih == 0 ? 2.0 : selisih * 0.3;
@@ -627,10 +586,7 @@ Widget _buildBell() {
             drawVerticalLine: false,
             horizontalInterval: interval,
             getDrawingHorizontalLine: (value) {
-              return FlLine(
-                color: const Color(0xFFEBE6F3),
-                strokeWidth: 0.8,
-              );
+              return FlLine(color: const Color(0xFFEBE6F3), strokeWidth: 0.8);
             },
           ),
 
@@ -679,8 +635,7 @@ Widget _buildBell() {
                 reservedSize: 45,
                 interval: interval,
                 getTitlesWidget: (value, meta) {
-                  if (value <= minY + 0.001 ||
-                      value >= maxY - 0.001) {
+                  if (value <= minY + 0.001 || value >= maxY - 0.001) {
                     return const SizedBox();
                   }
 
@@ -703,8 +658,7 @@ Widget _buildBell() {
           lineTouchData: LineTouchData(
             enabled: true,
             touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (touchedSpot) =>
-    const Color(0xFF6631A0),
+              getTooltipColor: (touchedSpot) => const Color(0xFF6631A0),
               getTooltipItems: (spots) {
                 return spots.map((spot) {
                   final index = spot.x.round();
@@ -735,12 +689,7 @@ Widget _buildBell() {
 
               dotData: FlDotData(
                 show: true,
-                getDotPainter: (
-                  spot,
-                  percent,
-                  barData,
-                  index,
-                ) {
+                getDotPainter: (spot, percent, barData, index) {
                   return FlDotCirclePainter(
                     radius: 3.5,
                     color: warnaGrafik,
@@ -770,7 +719,6 @@ Widget _buildBell() {
     );
   }
 
-
   // =========================================================
   // BOTTOM NAVIGATION
   // =========================================================
@@ -790,9 +738,7 @@ Widget _buildBell() {
 
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => const AiAssistantPage(),
-        ),
+        MaterialPageRoute(builder: (_) => const AiAssistantPage()),
       ).then((_) {
         if (mounted) {
           setState(() {
@@ -811,9 +757,7 @@ Widget _buildBell() {
 
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => const ProfilePage(),
-        ),
+        MaterialPageRoute(builder: (_) => const ProfilePage()),
       ).then((_) {
         if (mounted) {
           setState(() {
@@ -843,57 +787,45 @@ Widget _buildBell() {
               child: Column(
                 children: [
                   // GARIS NAVBAR KIRI DAN KANAN AI
-Row(
-  children: [
-    // GARIS SEBELAH KIRI
-    Expanded(
-      child: Container(
-        height: 1.2,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFE0468F),
-              Color(0xFFC94AB5),
-            ],
-          ),
-        ),
-      ),
-    ),
+                  Row(
+                    children: [
+                      // GARIS SEBELAH KIRI
+                      Expanded(
+                        child: Container(
+                          height: 1.2,
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Color(0xFFE0468F), Color(0xFFC94AB5)],
+                            ),
+                          ),
+                        ),
+                      ),
 
-    // JARAK UNTUK LINGKARAN AI
-    const SizedBox(width: 76),
+                      // JARAK UNTUK LINGKARAN AI
+                      const SizedBox(width: 76),
 
-    // GARIS SEBELAH KANAN
-    Expanded(
-      child: Container(
-        height: 1.2,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFC94AB5),
-              Color(0xFF9148D8),
-            ],
-          ),
-        ),
-      ),
-    ),
-  ],
-),
+                      // GARIS SEBELAH KANAN
+                      Expanded(
+                        child: Container(
+                          height: 1.2,
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Color(0xFFC94AB5), Color(0xFF9148D8)],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
 
                   Expanded(
                     child: Row(
                       children: [
-                        _buildBottomNavItem(
-                          index: 0,
-                          label: 'Home',
-                        ),
+                        _buildBottomNavItem(index: 0, label: 'Home'),
 
                         const SizedBox(width: 82),
 
-                        _buildBottomNavItem(
-                          index: 2,
-                          label: 'Profile',
-                        ),
+                        _buildBottomNavItem(index: 2, label: 'Profile'),
                       ],
                     ),
                   ),
@@ -923,8 +855,7 @@ Row(
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF9148D8)
-                            .withValues(alpha: 0.25),
+                        color: const Color(0xFF9148D8).withValues(alpha: 0.25),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -932,18 +863,18 @@ Row(
                   ),
                   child: ClipOval(
                     child: Image.asset(
-  'assets/images/icon_lita_navbar.png',
-  width: 64,
-  height: 64,
-  fit: BoxFit.contain,
-  errorBuilder: (context, error, stackTrace) {
-    return const Icon(
-      Icons.smart_toy_rounded,
-      color: Color(0xFF9148D8),
-      size: 42,
-    );
-  },
-),
+                      'assets/images/icon_lita_navbar.png',
+                      width: 64,
+                      height: 64,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.smart_toy_rounded,
+                          color: Color(0xFF9148D8),
+                          size: 42,
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -955,10 +886,7 @@ Row(
   }
 
   // ITEM HOME DAN PROFILE
-  Widget _buildBottomNavItem({
-    required int index,
-    required String label,
-  }) {
+  Widget _buildBottomNavItem({required int index, required String label}) {
     final selected = _navIndex == index;
     final homeAktif = index == 0 && selected;
     final profileAktif = index == 2 && selected;
@@ -966,10 +894,10 @@ Row(
     final itemIcon = homeAktif
         ? Icons.home_rounded
         : profileAktif
-            ? Icons.person_rounded
-            : index == 0
-                ? Icons.home_outlined
-                : Icons.person_outline_rounded;
+        ? Icons.person_rounded
+        : index == 0
+        ? Icons.home_outlined
+        : Icons.person_outline_rounded;
 
     return Expanded(
       child: InkWell(
@@ -989,10 +917,7 @@ Row(
                       ? const LinearGradient(
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
-                          colors: [
-                            Color(0xC7E0468F),
-                            Color(0xC79148D8),
-                          ],
+                          colors: [Color(0xC7E0468F), Color(0xC79148D8)],
                         )
                       : null,
                 ),
@@ -1003,16 +928,9 @@ Row(
                         shaderCallback: (bounds) => const LinearGradient(
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
-                          colors: [
-                            Color(0xFFE0468F),
-                            Color(0xFF9148D8),
-                          ],
+                          colors: [Color(0xFFE0468F), Color(0xFF9148D8)],
                         ).createShader(bounds),
-                        child: Icon(
-                          itemIcon,
-                          size: 26,
-                          color: Colors.white,
-                        ),
+                        child: Icon(itemIcon, size: 26, color: Colors.white),
                       ),
               ),
               const SizedBox(height: 1),
@@ -1020,8 +938,7 @@ Row(
                 label,
                 style: GoogleFonts.poppins(
                   fontSize: 12,
-                  fontWeight:
-                      selected ? FontWeight.w600 : FontWeight.w400,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                   color: Colors.black,
                 ),
               ),
@@ -1031,7 +948,6 @@ Row(
       ),
     );
   }
-
 } // Penutup class _DashboardPageState
 
 // =============================================================
@@ -1043,11 +959,7 @@ class _MenuItem {
   final String image;
   final Widget? targetPage;
 
-  const _MenuItem(
-    this.label,
-    this.image, {
-    this.targetPage,
-  });
+  const _MenuItem(this.label, this.image, {this.targetPage});
 }
 
 // =============================================================
@@ -1055,7 +967,6 @@ class _MenuItem {
 // =============================================================
 
 class GrowthRecord {
-
   final DateTime tanggal;
   final double berat;
   final double tinggi;
@@ -1069,11 +980,11 @@ class GrowthRecord {
   });
 
   Map<String, dynamic> toJson() => {
-        'tanggal': tanggal.toIso8601String(),
-        'berat': berat,
-        'tinggi': tinggi,
-        'lingkarKepala': lingkarKepala,
-      };
+    'tanggal': tanggal.toIso8601String(),
+    'berat': berat,
+    'tinggi': tinggi,
+    'lingkarKepala': lingkarKepala,
+  };
 
   factory GrowthRecord.fromJson(Map<String, dynamic> json) {
     return GrowthRecord(
@@ -1096,11 +1007,9 @@ class DashboardGrowthResult {
 }
 
 class DashboardGrowthStore {
-  static const _pesertaAktifKey =
-      'pelita_dashboard_peserta_aktif';
+  static const _pesertaAktifKey = 'pelita_dashboard_peserta_aktif';
 
-  static const _tanggalDaftarKey =
-      'pelita_dashboard_tanggal_daftar';
+  static const _tanggalDaftarKey = 'pelita_dashboard_tanggal_daftar';
 
   static String _keyRiwayat(String pesertaId) =>
       'pelita_dashboard_riwayat_$pesertaId';
@@ -1132,24 +1041,16 @@ class DashboardGrowthStore {
       ),
     );
 
-    riwayat.sort(
-      (a, b) => a.tanggal.compareTo(b.tanggal),
-    );
+    riwayat.sort((a, b) => a.tanggal.compareTo(b.tanggal));
 
     await prefs.setString(
       key,
       jsonEncode(riwayat.map((e) => e.toJson()).toList()),
     );
 
-    await prefs.setString(
-      _pesertaAktifKey,
-      pesertaId,
-    );
+    await prefs.setString(_pesertaAktifKey, pesertaId);
 
-    await prefs.setString(
-      _tanggalDaftarKey,
-      sekarang.toIso8601String(),
-    );
+    await prefs.setString(_tanggalDaftarKey, sekarang.toIso8601String());
   }
 
   static Future<DashboardGrowthResult> ambil() async {
@@ -1159,27 +1060,16 @@ class DashboardGrowthStore {
     final tanggalText = prefs.getString(_tanggalDaftarKey);
 
     if (pesertaId == null || tanggalText == null) {
-      return const DashboardGrowthResult(
-        tanggalDaftar: null,
-        riwayat: [],
-      );
+      return const DashboardGrowthResult(tanggalDaftar: null, riwayat: []);
     }
 
-    final riwayat = _baca(
-      prefs.getString(_keyRiwayat(pesertaId)),
-    );
+    final riwayat = _baca(prefs.getString(_keyRiwayat(pesertaId)));
 
-    riwayat.sort(
-      (a, b) => a.tanggal.compareTo(b.tanggal),
-    );
+    riwayat.sort((a, b) => a.tanggal.compareTo(b.tanggal));
 
     return DashboardGrowthResult(
       tanggalDaftar: DateTime.parse(tanggalText),
-      riwayat: riwayat.reversed
-          .take(5)
-          .toList()
-          .reversed
-          .toList(),
+      riwayat: riwayat.reversed.take(5).toList().reversed.toList(),
     );
   }
 
@@ -1190,9 +1080,8 @@ class DashboardGrowthStore {
 
     return list
         .map(
-          (item) => GrowthRecord.fromJson(
-            Map<String, dynamic>.from(item as Map),
-          ),
+          (item) =>
+              GrowthRecord.fromJson(Map<String, dynamic>.from(item as Map)),
         )
         .toList();
   }

@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/browser_client.dart';
+
+import '../services/auth_service.dart';
 
 class EditProfilePage extends StatefulWidget {
   final String nama;
@@ -35,11 +36,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   static const Color purple = Color(0xFF9449B8);
   static const Color pink = Color(0xFFE0468F);
 
-  static const String baseUrl = 'http://localhost:4000/api';
-
-  // HTTP Client dengan cookie session
-  static final BrowserClient client = BrowserClient()
-    ..withCredentials = true;
+  static final String baseUrl = AuthService.baseUrl;
+  static final client = AuthService.client;
 
   final List<String> avatars = [
     'assets/images/avatar_siti.png',

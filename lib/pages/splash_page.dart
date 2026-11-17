@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dashboard_page.dart';
-import 'login_page.dart';
+import '../features/auth/models/login_page.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});

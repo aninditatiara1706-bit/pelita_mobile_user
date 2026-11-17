@@ -1,55 +1,39 @@
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 
-import 'login_page.dart';
+import 'register_page.dart';
+import '../../../services/auth_service.dart';
 
-class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
 
-  final namaController = TextEditingController();
-  final hpController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final confirmPasswordController = TextEditingController();
+
+  final AuthService authService = AuthService();
 
   bool hidePassword = true;
-  bool hideConfirmPassword = true;
   bool isLoading = false;
 
   static const Color _purple = Color(0xFF9449B8);
   static const Color _pink = Color(0xFFE5507E);
 
-  // URL BACKEND
-  final String baseUrl = 'http://localhost:4000';
-
   @override
   void dispose() {
-    namaController.dispose();
-    hpController.dispose();
     emailController.dispose();
     passwordController.dispose();
-    confirmPasswordController.dispose();
     super.dispose();
   }
 
-  // STYLE TEXT FIELD
-  TextStyle get fieldTextStyle => GoogleFonts.poppins(
-        fontSize: 14,
-        color: Colors.black,
-      );
-
-  // INPUT DECORATION
+  // INPUT STYLE
   InputDecoration inputStyle(String hint) {
     return InputDecoration(
       hintText: hint,
@@ -67,10 +51,7 @@ class _RegisterPageState extends State<RegisterPage> {
         borderRadius: BorderRadius.circular(7),
         borderSide: BorderSide.none,
       ),
-      errorStyle: GoogleFonts.poppins(
-        fontSize: 12,
-        color: Colors.red,
-      ),
+      errorStyle: GoogleFonts.poppins(fontSize: 12),
     );
   }
 
@@ -98,97 +79,62 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // ==========================================
-  // REGISTER KE BACKEND
-  // ==========================================
-  Future<void> daftar() async {
-    FocusScope.of(context).unfocus();
-
+  // LOGIN KE BACKEND PELITA
+  Future<void> login() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
+    FocusScope.of(context).unfocus();
 
     setState(() {
       isLoading = true;
     });
 
     try {
-      final url = Uri.parse('$baseUrl/api/auth/register');
-
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
-          'name': namaController.text.trim(),
-          'email': emailController.text.trim(),
-          'password': passwordController.text,
-        }),
+      final result = await authService.login(
+        email: emailController.text.trim(),
+        password: passwordController.text,
       );
-
-      final Map<String, dynamic> responseData =
-          response.body.isNotEmpty
-              ? jsonDecode(response.body) as Map<String, dynamic>
-              : {};
 
       if (!mounted) return;
 
-      if (response.statusCode >= 200 &&
-          response.statusCode < 300) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              responseData['message'] ?? 'Registrasi berhasil!',
-              style: GoogleFonts.poppins(fontSize: 12),
-            ),
-            backgroundColor: Colors.green,
-          ),
-        );
+      final user = Map<String, dynamic>.from(
+        result['user'] as Map,
+      );
 
-        // Arahkan pengguna ke halaman login
-        await Future.delayed(
-          const Duration(milliseconds: 800),
-        );
+      final userName = user['name'] ?? 'Pengguna';
+      final userRole = user['role'];
 
-        if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Selamat datang, $userName!'),
+          backgroundColor: Colors.green,
+        ),
+      );
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const LoginPage(),
-          ),
-        );
-      } else {
-        final message = responseData['message'] ??
-            responseData['error'] ??
-            'Registrasi gagal. Silakan coba kembali.';
+      // Navigasi setelah login berhasil
+      Navigator.pushReplacementNamed(
+        context,
+        '/dashboard',
+      );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              message.toString(),
-              style: GoogleFonts.poppins(fontSize: 12),
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (error) {
+      // Role pengguna tersedia untuk pengembangan
+      // dashboard ADMIN dan KADER berikutnya.
+      debugPrint('Login berhasil');
+      debugPrint('Nama: $userName');
+      debugPrint('Role: $userRole');
+    } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Tidak dapat terhubung ke server. Periksa koneksi backend.',
-            style: GoogleFonts.poppins(fontSize: 12),
+            e.toString().replaceFirst('Exception: ', ''),
           ),
           backgroundColor: Colors.red,
         ),
       );
-
-      debugPrint('Error register: $error');
     } finally {
       if (mounted) {
         setState(() {
@@ -207,7 +153,7 @@ class _RegisterPageState extends State<RegisterPage> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
               horizontal: 30,
-              vertical: 24,
+              vertical: 36,
             ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(
@@ -218,11 +164,11 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 25),
 
-                    // JUDUL
+                    // JUDUL LOGIN
                     Text(
-                      'Daftar Akun',
+                      'Login',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
                         fontSize: 20,
@@ -231,91 +177,39 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 96),
 
-                    // NAMA LENGKAP
-                    gradientField(
-                      child: TextFormField(
-                        controller: namaController,
-                        style: fieldTextStyle,
-                        textCapitalization: TextCapitalization.words,
-                        decoration: inputStyle('Nama Lengkap'),
-                        validator: (value) {
-                          if (value == null ||
-                              value.trim().isEmpty) {
-                            return 'Nama lengkap wajib diisi';
-                          }
-
-                          return null;
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: 13),
-
-                    // NOMOR HP
-                    gradientField(
-                      child: TextFormField(
-                        controller: hpController,
-                        keyboardType: TextInputType.phone,
-                        style: fieldTextStyle,
-                        decoration: inputStyle('No. HP'),
-                        validator: (value) {
-                          if (value == null ||
-                              value.trim().isEmpty) {
-                            return 'Nomor HP wajib diisi';
-                          }
-
-                          if (value.trim().length < 8) {
-                            return 'Nomor HP terlalu pendek';
-                          }
-
-                          return null;
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: 13),
-
-                    // EMAIL
+                    // EMAIL / NO.HP
                     gradientField(
                       child: TextFormField(
                         controller: emailController,
                         keyboardType: TextInputType.emailAddress,
-                        style: fieldTextStyle,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                        ),
                         decoration: inputStyle('Email'),
                         validator: (value) {
                           if (value == null ||
                               value.trim().isEmpty) {
-                            return 'Email wajib diisi';
+                            return 'Email / No.HP wajib diisi';
                           }
-
-                          final email = value.trim();
-
-                          if (!RegExp(
-                            r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-                          ).hasMatch(email)) {
-                            return 'Format email tidak valid';
-                          }
-
                           return null;
                         },
                       ),
                     ),
 
-                    const SizedBox(height: 13),
+                    const SizedBox(height: 14),
 
                     // PASSWORD
                     gradientField(
                       child: TextFormField(
                         controller: passwordController,
                         obscureText: hidePassword,
-                        style: fieldTextStyle,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                        ),
                         decoration: inputStyle('Password').copyWith(
                           suffixIcon: IconButton(
-                            tooltip: hidePassword
-                                ? 'Tampilkan password'
-                                : 'Sembunyikan password',
                             onPressed: () {
                               setState(() {
                                 hidePassword = !hidePassword;
@@ -333,62 +227,48 @@ class _RegisterPageState extends State<RegisterPage> {
                           if (value == null || value.isEmpty) {
                             return 'Password wajib diisi';
                           }
-
-                          if (value.length < 6) {
-                            return 'Password minimal 6 karakter';
-                          }
-
                           return null;
                         },
                       ),
                     ),
 
-                    const SizedBox(height: 13),
-
-                    // CONFIRM PASSWORD
-                    gradientField(
-                      child: TextFormField(
-                        controller: confirmPasswordController,
-                        obscureText: hideConfirmPassword,
-                        style: fieldTextStyle,
-                        decoration: inputStyle(
-                          'Confirm Password',
-                        ).copyWith(
-                          suffixIcon: IconButton(
-                            tooltip: hideConfirmPassword
-                                ? 'Tampilkan password'
-                                : 'Sembunyikan password',
-                            onPressed: () {
-                              setState(() {
-                                hideConfirmPassword =
-                                    !hideConfirmPassword;
-                              });
-                            },
-                            icon: Icon(
-                              hideConfirmPassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              size: 18,
+                    // LUPA PASSWORD
+                    const SizedBox(height: 6),
+                    
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Fitur lupa password belum tersedia.',
+                              ),
                             ),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 5,
+                          ),
+                          foregroundColor: _purple,
+                          minimumSize: Size.zero,
+                          tapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          'Lupa Password?',
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            color: _purple,
                           ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Konfirmasi password wajib diisi';
-                          }
-
-                          if (value != passwordController.text) {
-                            return 'Password tidak sama';
-                          }
-
-                          return null;
-                        },
                       ),
                     ),
 
-                    const SizedBox(height: 38),
+                    const SizedBox(height: 30),
 
-                    // BUTTON DAFTAR
+                    // TOMBOL LOGIN
                     SizedBox(
                       height: 45,
                       child: DecoratedBox(
@@ -402,7 +282,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           borderRadius: BorderRadius.circular(7),
                         ),
                         child: ElevatedButton(
-                          onPressed: isLoading ? null : daftar,
+                          onPressed: isLoading ? null : login,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             disabledBackgroundColor:
@@ -410,41 +290,39 @@ class _RegisterPageState extends State<RegisterPage> {
                             shadowColor: Colors.transparent,
                             foregroundColor: Colors.white,
                             disabledForegroundColor: Colors.white,
-                            elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(7),
                             ),
                           ),
                           child: isLoading
                               ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
+                                  width: 19,
+                                  height: 19,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     color: Colors.white,
                                   ),
                                 )
                               : Text(
-                                  'Daftar',
+                                  'Masuk',
                                   style: GoogleFonts.poppins(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.white,
                                   ),
                                 ),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
 
-                    // NAVIGASI KE LOGIN
+                    // DAFTAR
                     Center(
                       child: Wrap(
                         alignment: WrapAlignment.center,
                         children: [
                           Text(
-                            'Sudah Punya Akun? ',
+                            'Belum Punya Akun? ',
                             style: GoogleFonts.poppins(
                               fontSize: 11,
                               color: Colors.black,
@@ -452,16 +330,16 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                           GestureDetector(
                             onTap: () {
-                              Navigator.pushReplacement(
+                              Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) =>
-                                      const LoginPage(),
+                                      const RegisterPage(),
                                 ),
                               );
                             },
                             child: Text(
-                              'Masuk',
+                              'Daftar',
                               style: GoogleFonts.poppins(
                                 fontSize: 11,
                                 color: _purple,
