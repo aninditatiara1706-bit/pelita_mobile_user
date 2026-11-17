@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/browser_client.dart';
+
+import '../services/auth_service.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -11,9 +12,9 @@ class NotificationPage extends StatefulWidget {
 
 class _NotificationPageState extends State<NotificationPage> {
   static const Color purple = Color(0xFFD04CD7);
-  static const String baseUrl = 'http://localhost:4000/api';
+  static final String baseUrl = AuthService.baseUrl;
 
-  late final BrowserClient _client;
+  late final _client = AuthService.client;
 
   bool isLoading = true;
   String? errorMessage;
@@ -24,17 +25,7 @@ class _NotificationPageState extends State<NotificationPage> {
   @override
   void initState() {
     super.initState();
-
-    // Mengirim cookie login agar backend mengenali akun pengguna.
-    _client = BrowserClient()..withCredentials = true;
-
     fetchNotifications();
-  }
-
-  @override
-  void dispose() {
-    _client.close();
-    super.dispose();
   }
 
   // Mengambil data dari backend

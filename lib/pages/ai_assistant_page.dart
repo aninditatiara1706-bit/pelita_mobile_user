@@ -1,4 +1,10 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class AiAssistantPage extends StatefulWidget {
   const AiAssistantPage({super.key});
@@ -11,11 +17,16 @@ class _AiAssistantPageState extends State<AiAssistantPage> {
   static const Color purple = Color(0xFF8040BC);
   static const Color pink = Color(0xFFE344A2);
   static const Color lightPurple = Color(0xFFF5F2FF);
+  static String get _chatApiUrl =>
+      kIsWeb || defaultTargetPlatform != TargetPlatform.android
+      ? 'http://localhost:5000/api/chat'
+      : 'http://10.0.2.2:5000/api/chat';
 
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   bool faqExpanded = false;
+  bool isSending = false;
 
   final List<Map<String, String>> messages = [
     {
@@ -38,61 +49,6 @@ class _AiAssistantPageState extends State<AiAssistantPage> {
     'Apa yang perlu dibawa saat ke Posyandu?',
   ];
 
-  final Map<String, String> responses = {
-    'Jadwal Posyandu':
-        'Kamu dapat melihat jadwal kegiatan melalui '
-        'menu Jadwal Posyandu. Pastikan datang sesuai '
-        'tanggal dan jam yang telah ditentukan.',
-    'Antrean Saya':
-        'Informasi nomor antrean dan status pelayanan '
-        'dapat kamu lihat melalui menu Antrean Saya.',
-    'Perkembangan Peserta':
-        'Perkembangan kesehatan peserta dapat '
-        'dipantau melalui data pemeriksaan dan '
-        'catatan pertumbuhan yang tersedia.',
-    'Riwayat Pemeriksaan':
-        'Riwayat pemeriksaan berisi catatan pelayanan '
-        'kesehatan yang pernah diikuti peserta.',
-    'Tentang Balita':
-        'Pemantauan tumbuh kembang balita meliputi '
-        'berat badan, tinggi badan, dan perkembangan '
-        'sesuai usia.',
-    'Tentang Lansia':
-        'Pelayanan Posyandu lansia dapat mencakup '
-        'pemantauan tekanan darah, berat badan, '
-        'serta edukasi kesehatan.',
-    'Tentang Ibu Hamil':
-        'Ibu hamil dianjurkan menjalani pemeriksaan '
-        'kehamilan secara rutin sesuai arahan '
-        'tenaga kesehatan.',
-    'Hasil Pemeriksaan':
-        'Hasil pemeriksaan dapat dilihat melalui '
-        'menu riwayat atau hasil pemeriksaan '
-        'jika data sudah tersedia.',
-    'Apa hasil pemeriksaan terakhir Budi?':
-        'Untuk melihat hasil pemeriksaan terakhir '
-        'Budi, buka menu Hasil Pemeriksaan. '
-        'Data pasien belum terhubung pada versi ini.',
-    'Bagaimana cara mengontrol diabetes?':
-        'Pengendalian diabetes umumnya meliputi '
-        'pola makan sehat, aktivitas fisik, '
-        'pemantauan gula darah, dan penggunaan '
-        'obat sesuai petunjuk tenaga kesehatan.',
-    'Pemeriksaan ibu hamil meliputi apa saja?':
-        'Pemeriksaan kehamilan dapat meliputi '
-        'pengukuran tekanan darah, berat badan, '
-        'pemeriksaan kondisi janin, dan pemeriksaan '
-        'lain sesuai kebutuhan.',
-    'Bagaimana cara menambah anak ke akun?':
-        'Buka menu anggota keluarga, lalu pilih '
-        'tambah anggota dan isi data anak '
-        'sesuai formulir yang tersedia.',
-    'Apa yang perlu dibawa saat ke Posyandu?':
-        'Siapkan dokumen identitas yang diperlukan, '
-        'buku KIA atau catatan kesehatan jika ada, '
-        'dan perlengkapan pribadi sesuai kebutuhan.',
-  };
-
   @override
   void dispose() {
     _messageController.dispose();
@@ -100,56 +56,72 @@ class _AiAssistantPageState extends State<AiAssistantPage> {
     super.dispose();
   }
 
-  void _sendMessage([String? selectedQuestion]) {
-    final question = (selectedQuestion ?? _messageController.text).trim();
+  Future<String> _requestAnswer(String question) async {
+    final response = await http
+        .post(
+          Uri.parse(_chatApiUrl),
+          headers: const {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({'question': question}),
+        )
+        .timeout(const Duration(seconds: 90));
 
-    if (question.isEmpty) return;
-
-    final pesan = question.toLowerCase().trim();
-
-    String answer;
-
-    if ([
-      'hai',
-      'hi',
-      'halo',
-      'hello',
-      'hey',
-      'pagi',
-      'siang',
-      'malam',
-    ].contains(pesan)) {
-      answer =
-          'Halo juga! 👋💜\n'
-          'Aku LITA, asisten virtual PELITA.\n\n'
-          'Ada yang bisa aku bantu hari ini? '
-          'Kamu bisa bertanya tentang jadwal Posyandu, '
-          'antrean, pemeriksaan kesehatan, atau layanan lainnya.';
-    } else if (pesan.contains('terima kasih') ||
-        pesan.contains('makasih') ||
-        pesan.contains('thanks')) {
-      answer =
-          'Sama-sama! 💜 Senang bisa membantu kamu. '
-          'Kalau ada pertanyaan lain, jangan ragu bertanya, ya!';
-    } else if (pesan == 'oke' || pesan == 'ok' || pesan == 'baik') {
-      answer = 'Siap! 😊 Ada lagi yang ingin kamu tanyakan?';
-    } else {
-      answer =
-          responses[question] ??
-          'Maaf, aku belum menemukan jawaban untuk '
-              'pertanyaan tersebut. 💜\n\n'
-              'Coba pilih salah satu topik di atas atau '
-              'tanyakan hal lain seputar layanan Posyandu, ya!';
+    final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode != 200) {
+      throw Exception(
+        responseData['error'] ?? 'Server AI mengembalikan error.',
+      );
     }
 
+    final answer = responseData['answer'];
+    if (answer is! String || answer.trim().isEmpty) {
+      throw const FormatException('Server AI tidak mengirim jawaban.');
+    }
+
+    return answer.trim();
+  }
+
+  Future<void> _sendMessage([String? selectedQuestion]) async {
+    final question = (selectedQuestion ?? _messageController.text).trim();
+
+    if (question.isEmpty || isSending) return;
+
     setState(() {
+      isSending = true;
       messages.add({'role': 'user', 'text': question});
-      messages.add({'role': 'assistant', 'text': answer});
       faqExpanded = false;
     });
 
     _messageController.clear();
+    _scrollToLatest();
 
+    String answer;
+    try {
+      answer = await _requestAnswer(question);
+    } on TimeoutException {
+      answer = 'Server AI terlalu lama merespons. Coba lagi sebentar.';
+    } on http.ClientException catch (error) {
+      debugPrint('LITA connection failed: $error');
+      answer =
+          'Tidak dapat terhubung ke server AI. Pastikan backend chatbot '
+          'berjalan di port 5000.';
+    } catch (error) {
+      debugPrint('LITA request failed: $error');
+      answer = error.toString().replaceFirst('Exception: ', '');
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      messages.add({'role': 'assistant', 'text': answer});
+      isSending = false;
+    });
+    _scrollToLatest();
+  }
+
+  void _scrollToLatest() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -245,10 +217,33 @@ class _AiAssistantPageState extends State<AiAssistantPage> {
                   ),
                 ],
               ),
-              child: Text(
-                message['text'] ?? '',
-                style: const TextStyle(fontSize: 14, height: 1.4),
-              ),
+              child: isUser
+    ? Text(
+        message['text'] ?? '',
+        style: const TextStyle(
+          fontSize: 14,
+          height: 1.4,
+        ),
+      )
+    : MarkdownBody(
+        data: message['text'] ?? '',
+        selectable: true,
+        styleSheet: MarkdownStyleSheet(
+          p: const TextStyle(
+            fontSize: 14,
+            height: 1.4,
+            color: Colors.black87,
+          ),
+          strong: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+          listBullet: const TextStyle(
+            fontSize: 14,
+            color: Colors.black87,
+          ),
+        ),
+      ),
             ),
           ),
         ],
@@ -348,7 +343,8 @@ class _AiAssistantPageState extends State<AiAssistantPage> {
             child: TextField(
               controller: _messageController,
               textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _sendMessage(),
+              enabled: !isSending,
+              onSubmitted: isSending ? null : (_) => _sendMessage(),
               style: const TextStyle(fontSize: 12),
               decoration: InputDecoration(
                 hintText: 'Tanyakan sesuatu tentang layanan Posyandu...',
@@ -374,21 +370,30 @@ class _AiAssistantPageState extends State<AiAssistantPage> {
           ),
           const SizedBox(width: 7),
           InkWell(
-  onTap: () => _sendMessage(),
-  borderRadius: BorderRadius.circular(24),
-  child: SizedBox(
-    width: 48,
-    height: 48,
-    child: Center(
-      child: Image.asset(
-        'assets/images/icon_send.png',
-        width: 36,
-        height: 36,
-        fit: BoxFit.contain,
-      ),
-    ),
-  ),
-),
+            onTap: isSending ? null : () => _sendMessage(),
+            borderRadius: BorderRadius.circular(24),
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: Center(
+                child: isSending
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: purple,
+                        ),
+                      )
+                    : Image.asset(
+                        'assets/images/icon_send.png',
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.contain,
+                      ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -482,8 +487,8 @@ class _AiAssistantPageState extends State<AiAssistantPage> {
                               
 Expanded(
   child: Text(
-    'Sesi dimulai pukul 12.20 dan tersimpan aman.\n'
-    'Percakapanmu akan terhapus otomatis dalam 24 jam.',
+    'Pertanyaanmu dikirim ke LITA untuk dijawab oleh AI.\n'
+    'Jawaban mungkin membutuhkan beberapa detik.',
     style: TextStyle(
       fontSize: 11,
       color: Colors.black,
@@ -492,7 +497,6 @@ Expanded(
     ),
   ),
 ),
-
                             ],
                           ),
                         ),
@@ -578,6 +582,11 @@ Expanded(
                       ),
                       const SizedBox(height: 18),
                       ...messages.map(_messageBubble),
+                      if (isSending)
+                        _messageBubble({
+                          'role': 'assistant',
+                          'text': 'LITA sedang menyiapkan jawaban...',
+                        }),
                     ],
                   ),
                 ),

@@ -31,7 +31,7 @@ class _LayananBalitaPageState extends State<LayananBalitaPage> {
   static const Color _pink = Color(0xFFE5507E);
 
   // Backend tetap menggunakan port 4000
-  static const String _baseUrl = 'http://localhost:4000';
+  static const String _baseUrl = 'http://10.0.2.2:4000';
 
   @override
   void dispose() {

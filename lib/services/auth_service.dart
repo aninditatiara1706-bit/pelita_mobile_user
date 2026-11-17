@@ -1,13 +1,18 @@
 import 'dart:convert';
-import 'package:http/browser_client.dart';
+
+import 'package:flutter/foundation.dart';
+
+import 'auth_http_client.dart';
 
 class AuthService {
-  static const String baseUrl =
-      'http://localhost:4000/api';
+  static String get baseUrl {
+    final host = !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+        ? '10.0.2.2'
+        : 'localhost';
+    return 'http://$host:4000/api';
+  }
 
-  // BrowserClient memungkinkan pengiriman HTTP-only cookie
-  static final BrowserClient client = BrowserClient()
-    ..withCredentials = true;
+  static final client = createAuthHttpClient();
 
   // LOGIN
   Future<Map<String, dynamic>> login({
@@ -49,7 +54,8 @@ class AuthService {
         'user': data['user'],
       };
     } catch (e) {
-      throw Exception('Login gagal: $e');
+      final message = e.toString().replaceFirst('Exception: ', '');
+      throw Exception('Login gagal: $message');
     }
   }
 
