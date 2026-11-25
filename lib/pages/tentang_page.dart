@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'dashboard_page.dart';
-import 'profile_page.dart';
+import '../features/dashboard/view/dashboard_page.dart';
+import '../features/profile/view/profile_page.dart';
 
 class TentangPage extends StatelessWidget {
   const TentangPage({super.key});

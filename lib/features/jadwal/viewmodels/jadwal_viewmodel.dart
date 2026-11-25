@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/jadwal_model.dart';
 import '../repositories/jadwal_repository.dart';
 
@@ -9,15 +10,11 @@ class JadwalViewModel extends ChangeNotifier {
     required JadwalRepository repository,
   }) : _repository = repository;
 
-  // ================================================
-  // STATE JADWAL
-  // ================================================
-
   List<JadwalPosyandu> _jadwal = [];
 
   List<JadwalPosyandu> get jadwal => _jadwal;
 
-  int _selectedJadwal = 0;
+  int _selectedJadwal = -1;
 
   int get selectedJadwal => _selectedJadwal;
 
@@ -42,10 +39,15 @@ class JadwalViewModel extends ChangeNotifier {
     try {
       _jadwal = await _repository.ambilJadwal();
 
-      if (_jadwal.isEmpty) {
-        _selectedJadwal = 0;
-      } else if (_selectedJadwal >= _jadwal.length) {
-        _selectedJadwal = 0;
+      // Jadwal pertama otomatis terpilih
+      // hanya jika tersedia dan belum penuh.
+      _selectedJadwal = -1;
+
+      for (int i = 0; i < _jadwal.length; i++) {
+        if (_jadwal[i].tersedia) {
+          _selectedJadwal = i;
+          break;
+        }
       }
     } catch (e) {
       _errorMessage = 'Gagal memuat jadwal Posyandu';
@@ -67,21 +69,40 @@ class JadwalViewModel extends ChangeNotifier {
       return;
     }
 
+    // Jadwal penuh tidak bisa dipilih.
+    if (_jadwal[index].penuh) {
+      return;
+    }
+
     _selectedJadwal = index;
 
     notifyListeners();
   }
 
   // ================================================
-  // MENGAMBIL JADWAL TERPILIH
+  // JADWAL TERPILIH
   // ================================================
 
   JadwalPosyandu? get jadwalTerpilih {
-    if (_jadwal.isEmpty ||
+    if (_selectedJadwal < 0 ||
         _selectedJadwal >= _jadwal.length) {
       return null;
     }
 
-    return _jadwal[_selectedJadwal];
+    final jadwal = _jadwal[_selectedJadwal];
+
+    if (jadwal.penuh) {
+      return null;
+    }
+
+    return jadwal;
+  }
+
+  // ================================================
+  // REFRESH
+  // ================================================
+
+  Future<void> refreshJadwal() async {
+    await muatJadwal();
   }
 }

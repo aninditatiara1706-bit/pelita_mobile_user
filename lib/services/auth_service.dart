@@ -6,6 +6,10 @@ import 'auth_http_client.dart';
 
 class AuthService {
   static String get baseUrl {
+    const configuredUrl = String.fromEnvironment('API_BASE_URL');
+    if (configuredUrl.isNotEmpty) {
+      return configuredUrl;
+    }
     final host = !kIsWeb && defaultTargetPlatform == TargetPlatform.android
         ? '10.0.2.2'
         : 'localhost';

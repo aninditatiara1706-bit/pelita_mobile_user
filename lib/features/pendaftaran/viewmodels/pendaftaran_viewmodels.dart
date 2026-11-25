@@ -9,6 +9,10 @@ class PendaftaranViewModels extends ChangeNotifier {
   PendaftaranViewModels({PendaftaranRepositories? repository})
     : _repository = repository ?? PendaftaranRepositories();
 
+  // =====================================================
+  // STATE PENDAFTARAN
+  // =====================================================
+
   bool _isLoading = false;
   String? _errorMessage;
   String? _successMessage;
@@ -17,7 +21,30 @@ class PendaftaranViewModels extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
 
-  Future<bool> simpanPendaftaran(PendaftaranModel data) async {
+  // =====================================================
+  // DATA PENDAFTARAN BERHASIL
+  // =====================================================
+
+  PendaftaranBerhasilModel? _dataPendaftaranBerhasil;
+
+  PendaftaranBerhasilModel? get dataPendaftaranBerhasil =>
+      _dataPendaftaranBerhasil;
+
+  // Menyiapkan data untuk halaman Pendaftaran Berhasil
+  void setDataPendaftaranBerhasil(
+    PendaftaranBerhasilModel data,
+  ) {
+    _dataPendaftaranBerhasil = data;
+    notifyListeners();
+  }
+
+  // =====================================================
+  // SIMPAN PENDAFTARAN PESERTA
+  // =====================================================
+
+  Future<bool> simpanPendaftaran(
+    PendaftaranModel data,
+  ) async {
     if (_isLoading) return false;
 
     _isLoading = true;
@@ -33,7 +60,9 @@ class PendaftaranViewModels extends ChangeNotifier {
 
       return true;
     } catch (error) {
-      _errorMessage = error.toString().replaceFirst('Exception: ', '');
+      _errorMessage = error
+          .toString()
+          .replaceFirst('Exception: ', '');
 
       return false;
     } finally {
@@ -42,9 +71,24 @@ class PendaftaranViewModels extends ChangeNotifier {
     }
   }
 
+  // =====================================================
+  // RESET MESSAGE
+  // =====================================================
+
   void resetMessage() {
     _errorMessage = null;
     _successMessage = null;
+
+    notifyListeners();
+  }
+
+  // =====================================================
+  // RESET DATA PENDAFTARAN BERHASIL
+  // =====================================================
+
+  void resetDataPendaftaranBerhasil() {
+    _dataPendaftaranBerhasil = null;
+
     notifyListeners();
   }
 }

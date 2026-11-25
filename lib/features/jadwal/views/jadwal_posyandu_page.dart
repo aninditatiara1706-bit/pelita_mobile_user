@@ -7,26 +7,31 @@ import '../viewmodels/jadwal_viewmodel.dart';
 import '../../pendaftaran/views/detail_pendaftaran_page.dart';
 
 class JadwalPosyanduPage extends StatefulWidget {
+  final String pesertaId;
   final String namaPeserta;
 
-  const JadwalPosyanduPage({super.key, required this.namaPeserta});
+  const JadwalPosyanduPage({
+    super.key,
+    required this.pesertaId,
+    required this.namaPeserta,
+  });
 
   @override
-  State<JadwalPosyanduPage> createState() => _JadwalPosyanduPageState();
+  State<JadwalPosyanduPage> createState() =>
+      _JadwalPosyanduPageState();
 }
 
-class _JadwalPosyanduPageState extends State<JadwalPosyanduPage> {
+class _JadwalPosyanduPageState
+    extends State<JadwalPosyanduPage> {
   late final JadwalViewModel _viewModel;
-
-  // ================================================
-  // INIT STATE
-  // ================================================
 
   @override
   void initState() {
     super.initState();
 
-    _viewModel = JadwalViewModel(repository: JadwalRepository());
+    _viewModel = JadwalViewModel(
+      repository: JadwalRepository(),
+    );
 
     _viewModel.muatJadwal();
   }
@@ -37,10 +42,6 @@ class _JadwalPosyanduPageState extends State<JadwalPosyanduPage> {
     super.dispose();
   }
 
-  // ================================================
-  // BUILD
-  // ================================================
-
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -48,34 +49,49 @@ class _JadwalPosyanduPageState extends State<JadwalPosyanduPage> {
       builder: (context, child) {
         return Scaffold(
           backgroundColor: Colors.white,
+
           body: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+              ),
+
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+
                 children: [
                   const SizedBox(height: 12),
 
+                  // =================================
                   // TOMBOL KEMBALI
+                  // =================================
+
                   IconButton(
                     padding: EdgeInsets.zero,
                     alignment: Alignment.centerLeft,
+
                     icon: const Icon(
                       Icons.arrow_back,
                       size: 30,
                       color: Colors.black,
                     ),
+
                     onPressed: () {
                       Navigator.pop(context);
                     },
                   ),
 
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 20),
 
-                  // JUDUL HALAMAN
+                  // =================================
+                  // JUDUL
+                  // =================================
+
                   Center(
                     child: Text(
                       'Jadwal Posyandu',
+
                       style: GoogleFonts.poppins(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
@@ -84,11 +100,15 @@ class _JadwalPosyanduPageState extends State<JadwalPosyanduPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 46),
+                  const SizedBox(height: 32),
 
-                  // JUDUL JADWAL
+                  // =================================
+                  // SUBJUDUL
+                  // =================================
+
                   Text(
                     'Jadwal yang Tersedia',
+
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -98,83 +118,21 @@ class _JadwalPosyanduPageState extends State<JadwalPosyanduPage> {
 
                   const SizedBox(height: 14),
 
+                  // =================================
                   // DAFTAR JADWAL
-                  if (_viewModel.isLoading)
-                    const Center(child: CircularProgressIndicator())
-                  else if (_viewModel.errorMessage != null)
-                    Center(
-                      child: Text(
-                        _viewModel.errorMessage!,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.red,
-                        ),
-                      ),
-                    )
-                  else
-                    ...List.generate(
-                      _viewModel.jadwal.length,
-                      (index) =>
-                          _buildJadwalCard(_viewModel.jadwal[index], index),
-                    ),
+                  // =================================
 
-                  const Spacer(),
-
-                  // TOMBOL LANJUTKAN
-                  Container(
-                    width: double.infinity,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF9148D8), Color(0xFFE0468F)],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFF282028),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-
-                        onTap: () {
-                          final jadwal = _viewModel.jadwalTerpilih;
-
-                          if (jadwal == null) {
-                            return;
-                          }
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => DetailPendaftaranPage(
-                                peserta: {'nama': widget.namaPeserta},
-                                jadwal: {
-                                  'tanggal': jadwal.tanggal,
-                                  'waktu': jadwal.waktu,
-                                },
-                                tanggal: jadwal.tanggal,
-                                waktu: jadwal.waktu,
-                              ),
-                            ),
-                          );
-                        },
-
-                        child: Center(
-                          child: Text(
-                            'Lanjutkan',
-                            style: GoogleFonts.poppins(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  Expanded(
+                    child: _buildDaftarJadwal(),
                   ),
+
+                  const SizedBox(height: 16),
+
+                  // =================================
+                  // TOMBOL LANJUTKAN
+                  // =================================
+
+                  _buildTombolLanjutkan(),
 
                   const SizedBox(height: 24),
                 ],
@@ -187,29 +145,116 @@ class _JadwalPosyanduPageState extends State<JadwalPosyanduPage> {
   }
 
   // ================================================
+  // DAFTAR JADWAL
+  // ================================================
+
+  Widget _buildDaftarJadwal() {
+    if (_viewModel.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFFD43BDE),
+        ),
+      );
+    }
+
+    if (_viewModel.errorMessage != null) {
+      return Center(
+        child: Text(
+          _viewModel.errorMessage!,
+
+          textAlign: TextAlign.center,
+
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: Colors.red,
+          ),
+        ),
+      );
+    }
+
+    if (_viewModel.jadwal.isEmpty) {
+      return Center(
+        child: Text(
+          'Belum ada jadwal Posyandu tersedia',
+
+          textAlign: TextAlign.center,
+
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: Colors.grey,
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.zero,
+
+      itemCount: _viewModel.jadwal.length,
+
+      itemBuilder: (context, index) {
+        return _buildJadwalCard(
+          _viewModel.jadwal[index],
+          index,
+        );
+      },
+    );
+  }
+
+  // ================================================
   // KARTU JADWAL
   // ================================================
 
-  Widget _buildJadwalCard(JadwalPosyandu jadwal, int index) {
-    final selected = _viewModel.selectedJadwal == index;
+  Widget _buildJadwalCard(
+    JadwalPosyandu jadwal,
+    int index,
+  ) {
+    final selected =
+        _viewModel.selectedJadwal == index;
 
     return GestureDetector(
       onTap: () {
-        _viewModel.pilihJadwal(index);
-      },
+  if (jadwal.penuh) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Kuota jadwal ini sudah penuh'),
+      ),
+    );
+    return;
+  }
+
+  _viewModel.pilihJadwal(index);
+},
+
       child: Container(
         width: double.infinity,
-        height: 104,
-        margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+
+        margin: const EdgeInsets.only(
+          bottom: 14,
+        ),
+
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+
         decoration: BoxDecoration(
           color: Colors.white,
+
           borderRadius: BorderRadius.circular(17),
-          border: Border.all(color: const Color(0xFF555555), width: 0.9),
+
+          border: Border.all(
+            color: selected
+                ? const Color(0xFFD43BDE)
+                : const Color(0xFF555555),
+
+            width: selected ? 1.5 : 0.9,
+          ),
         ),
+
         child: Row(
           children: [
-            // IKON KALENDER
+            // ICON
 
             const Icon(
               Icons.calendar_month_outlined,
@@ -219,14 +264,19 @@ class _JadwalPosyanduPageState extends State<JadwalPosyanduPage> {
 
             const SizedBox(width: 16),
 
-            // INFORMASI JADWAL
+            // INFORMASI
+
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+
                 children: [
+                  // TANGGAL
+
                   Text(
                     jadwal.tanggal,
+
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -234,38 +284,105 @@ class _JadwalPosyanduPageState extends State<JadwalPosyanduPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
+
+                  // WAKTU
 
                   Text(
                     jadwal.waktu,
+
                     style: GoogleFonts.poppins(
                       fontSize: 11,
                       color: Colors.black87,
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  // LOKASI
+
+                  Text(
+                    jadwal.lokasi,
+
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: Colors.black54,
                     ),
                   ),
                 ],
               ),
             ),
 
-            // RADIO BUTTON
+const SizedBox(height: 5),
+
+Row(
+  children: [
+    Icon(
+      jadwal.penuh
+          ? Icons.people_alt_outlined
+          : Icons.people_outline,
+      size: 14,
+      color: jadwal.penuh
+          ? Colors.red
+          : const Color(0xFFD43BDE),
+    ),
+
+    const SizedBox(width: 5),
+
+    Text(
+      'Kuota: ${jadwal.informasiKuota}',
+      style: GoogleFonts.poppins(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: jadwal.penuh
+            ? Colors.red
+            : const Color(0xFFD43BDE),
+      ),
+    ),
+
+    if (jadwal.penuh) ...[
+      const SizedBox(width: 5),
+      Text(
+        '(Penuh)',
+        style: GoogleFonts.poppins(
+          fontSize: 10,
+          color: Colors.red,
+        ),
+      ),
+    ],
+  ],
+),
+            const SizedBox(width: 10),
+
+            // RADIO
+
             Container(
               width: 18,
               height: 18,
+
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
+
                 border: Border.all(
                   color: selected
                       ? const Color(0xFFD43BDE)
                       : const Color(0xFF555555),
+
                   width: 1.4,
                 ),
               ),
+
               child: selected
                   ? Center(
                       child: Container(
                         width: 9,
                         height: 9,
-                        decoration: const BoxDecoration(
+
+                        decoration:
+                            const BoxDecoration(
                           color: Color(0xFFD43BDE),
                           shape: BoxShape.circle,
                         ),
@@ -274,6 +391,112 @@ class _JadwalPosyanduPageState extends State<JadwalPosyanduPage> {
                   : null,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ================================================
+  // TOMBOL LANJUTKAN
+  // ================================================
+
+  Widget _buildTombolLanjutkan() {
+    return Container(
+      width: double.infinity,
+      height: 52,
+
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF9148D8),
+            Color(0xFFE0468F),
+          ],
+        ),
+
+        borderRadius: BorderRadius.circular(16),
+
+        border: Border.all(
+          color: const Color(0xFF282028),
+          width: 0.8,
+        ),
+      ),
+
+      child: Material(
+        color: Colors.transparent,
+
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+
+          onTap: _lanjutkan,
+
+          child: Center(
+            child: Text(
+              'Lanjutkan',
+
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ================================================
+  // LANJUT KE DETAIL PENDAFTARAN
+  // ================================================
+
+  void _lanjutkan() {
+    final jadwal =
+        _viewModel.jadwalTerpilih;
+
+    if (jadwal == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Silakan pilih jadwal terlebih dahulu',
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    // DEBUG
+
+    debugPrint('====================================');
+    debugPrint('BOOKING PELITA');
+    debugPrint('PESERTA ID: ${widget.pesertaId}');
+    debugPrint('NAMA PESERTA: ${widget.namaPeserta}');
+    debugPrint('JADWAL ID: ${jadwal.id}');
+    debugPrint('TANGGAL: ${jadwal.tanggal}');
+    debugPrint('WAKTU: ${jadwal.waktu}');
+    debugPrint('LOKASI: ${jadwal.lokasi}');
+    debugPrint('====================================');
+
+    Navigator.push(
+      context,
+
+      MaterialPageRoute(
+        builder: (context) =>
+            DetailPendaftaranPage(
+          peserta: {
+            'id': widget.pesertaId,
+            'nama': widget.namaPeserta,
+          },
+
+          jadwal: {
+            'id': jadwal.id,
+            'tanggal': jadwal.tanggal,
+            'waktu': jadwal.waktu,
+            'lokasi': jadwal.lokasi,
+          },
+
+          tanggal: jadwal.tanggal,
+          waktu: jadwal.waktu,
         ),
       ),
     );

@@ -7,7 +7,7 @@ class PendaftaranRepositories {
   Future<String> simpanPendaftaran(PendaftaranModel data) async {
     final response = await AuthService.client
         .post(
-          Uri.parse('${AuthService.baseUrl}/peserta'),
+          Uri.parse('${AuthService.baseUrl}/peserta/saya'),
           headers: const {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -25,9 +25,12 @@ class PendaftaranRepositories {
     if (response.statusCode < 200 ||
         response.statusCode >= 300 ||
         decoded['success'] != true) {
-      throw Exception(decoded['message'] ?? 'Pendaftaran peserta gagal');
+      throw Exception(
+        decoded['message'] ?? 'Pendaftaran peserta gagal',
+      );
     }
 
-    return decoded['message']?.toString() ?? 'Pendaftaran peserta berhasil';
+    return decoded['message']?.toString() ??
+        'Pendaftaran peserta berhasil';
   }
 }

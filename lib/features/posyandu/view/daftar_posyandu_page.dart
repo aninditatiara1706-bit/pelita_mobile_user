@@ -149,20 +149,27 @@ class _DaftarPosyanduPageState extends State<DaftarPosyanduPage> {
                         borderRadius: BorderRadius.circular(16),
 
                         onTap: () {
-                          final nama = _viewModel.namaPesertaTerpilih;
+  final peserta = _viewModel.pesertaTerpilih;
 
-                          if (nama == null) {
-                            return;
-                          }
+  if (peserta == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Silakan pilih peserta terlebih dahulu'),
+      ),
+    );
+    return;
+  }
 
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  JadwalPosyanduPage(namaPeserta: nama),
-                            ),
-                          );
-                        },
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => JadwalPosyanduPage(
+        pesertaId: peserta.id,
+        namaPeserta: peserta.nama,
+      ),
+    ),
+  );
+},
 
                         child: Center(
                           child: Text(

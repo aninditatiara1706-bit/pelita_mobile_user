@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'pages/splash_page.dart';
-import 'features/auth/models/login_page.dart';
-import 'pages/dashboard_page.dart';
-import 'pages/profile_page.dart';
+import 'features/splash/views/splash_page.dart';
+import 'features/auth/views/login_page.dart';
+import 'features/dashboard/view/dashboard_page.dart';
+import 'features/profile/view/profile_page.dart';
 import 'services/api_service.dart';
 
 void main() {

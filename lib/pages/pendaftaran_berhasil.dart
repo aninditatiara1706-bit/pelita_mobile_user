@@ -1,4 +1,4 @@
-import 'pendaftaran_berhasil_page.dart' as booking;
+import '../features/pendaftaran/views/pendaftaran_berhasil_page.dart' as booking;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

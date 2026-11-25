@@ -1,10 +1,11 @@
-import 'dart:convert';
 
+import 'dart:convert';
+import '../../antrean/repositories/antrean_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../services/auth_service.dart';
-import '../../../pages/pendaftaran_berhasil_page.dart';
+import 'pendaftaran_berhasil_page.dart';
 
 class DetailPendaftaranPage extends StatefulWidget {
   final Map<String, dynamic> peserta;
@@ -21,13 +22,16 @@ class DetailPendaftaranPage extends StatefulWidget {
   });
 
   @override
-  State<DetailPendaftaranPage> createState() => _DetailPendaftaranPageState();
+  State<DetailPendaftaranPage> createState() =>
+      _DetailPendaftaranPageState();
 }
 
-class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
+class _DetailPendaftaranPageState
+    extends State<DetailPendaftaranPage> {
   bool _isSubmitting = false;
 
-  String get _namaPeserta => (widget.peserta['nama'] ?? 'Peserta').toString();
+  String get _namaPeserta =>
+      (widget.peserta['nama'] ?? 'Peserta').toString();
 
   String get _kategori =>
       (widget.peserta['kategori'] ?? '').toString().toUpperCase();
@@ -36,24 +40,33 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
     final lahir = DateTime.tryParse(
       widget.peserta['tanggalLahir']?.toString() ?? '',
     );
+
     int? usia;
+
     if (lahir != null) {
       final hariIni = DateTime.now();
+
       usia = hariIni.year - lahir.year;
+
       if (hariIni.month < lahir.month ||
-          (hariIni.month == lahir.month && hariIni.day < lahir.day)) {
+          (hariIni.month == lahir.month &&
+              hariIni.day < lahir.day)) {
         usia--;
       }
     }
 
-    final usiaKehamilan = widget.peserta['usiaKehamilan']?.toString();
+    final usiaKehamilan =
+        widget.peserta['usiaKehamilan']?.toString();
+
     return switch (_kategori) {
-      'BALITA' => usia == null ? 'Balita' : 'Balita $usia Tahun',
+      'BALITA' =>
+        usia == null ? 'Balita' : 'Balita $usia Tahun',
       'IBU_HAMIL' =>
         usiaKehamilan == null || usiaKehamilan.isEmpty
             ? 'Ibu Hamil'
             : 'Ibu Hamil $usiaKehamilan',
-      'LANSIA' => usia == null ? 'Lansia' : 'Lansia $usia Tahun',
+      'LANSIA' =>
+        usia == null ? 'Lansia' : 'Lansia $usia Tahun',
       _ => 'Peserta',
     };
   }
@@ -79,6 +92,10 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
     _ => null,
   };
 
+  // =====================================================
+  // DAFTAR ANTREAN KE BACKEND
+  // =====================================================
+
   Future<void> _daftarkanAntrean() async {
     if (_isSubmitting) return;
 
@@ -87,6 +104,28 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
     });
 
     try {
+      // Ambil ID dari data peserta dan jadwal
+      final pesertaId = widget.peserta['id'];
+      final jadwalId = widget.jadwal['id'];
+
+      // Body request
+      final requestBody = {
+        'pesertaId': pesertaId,
+        'jadwalId': jadwalId,
+      };
+
+      // =================================================
+      // DEBUG REQUEST
+      // =================================================
+
+      debugPrint('====================================');
+      debugPrint('DEBUG BOOKING PELITA');
+      debugPrint('PESERTA ID: $pesertaId');
+      debugPrint('JADWAL ID: $jadwalId');
+      debugPrint('REQUEST BODY: ${jsonEncode(requestBody)}');
+      debugPrint('====================================');
+
+      // Kirim request ke backend
       final response = await AuthService.client
           .post(
             Uri.parse('${AuthService.baseUrl}/antrean'),
@@ -94,28 +133,50 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
               'Accept': 'application/json',
               'Content-Type': 'application/json',
             },
-            body: jsonEncode({
-              'pesertaId': widget.peserta['id'],
-              'jadwalId': widget.jadwal['id'],
-            }),
+            body: jsonEncode(requestBody),
           )
           .timeout(const Duration(seconds: 20));
-      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
-      if (response.statusCode != 201 || responseData['success'] != true) {
+      // =================================================
+      // DEBUG RESPONSE
+      // =================================================
+
+      debugPrint('HTTP STATUS: ${response.statusCode}');
+      debugPrint('RESPONSE BODY: ${response.body}');
+      debugPrint('====================================');
+
+      final responseData =
+          jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode != 201 ||
+          responseData['success'] != true) {
         throw Exception(
-          responseData['message'] ?? 'Pendaftaran antrean gagal.',
+          responseData['message'] ??
+              'Pendaftaran antrean gagal.',
         );
       }
 
-      final antrean = Map<String, dynamic>.from(responseData['data'] as Map);
+      // Ambil data antrean dari backend
+      final antrean =
+          Map<String, dynamic>.from(responseData['data'] as Map);
+
       final nomorAntrean = antrean['noAntrean'];
       final antreanId = antrean['id'];
+
       if (nomorAntrean == null || antreanId == null) {
-        throw const FormatException('Data antrean dari server tidak lengkap.');
+        throw const FormatException(
+          'Data antrean dari server tidak lengkap.',
+        );
       }
+      // SIMPAN ID ANTREAN AGAR BISA DIBUKA DARI HOME
+await AntreanRepository().simpanAntreanId(antreanId.toString());
+
+      // =================================================
+      // NAVIGASI KE HALAMAN BERHASIL
+      // =================================================
 
       if (!mounted) return;
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -126,7 +187,8 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
             tanggal: widget.tanggal,
             waktu: widget.waktu,
             lokasi: (widget.jadwal['lokasi'] ?? '').toString(),
-            nomorAntrean: 'A-${nomorAntrean.toString().padLeft(2, '0')}',
+            nomorAntrean:
+                'A-${nomorAntrean.toString().padLeft(2, '0')}',
             antreanId: antreanId.toString(),
           ),
         ),
@@ -134,9 +196,13 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
     } catch (error) {
       if (!mounted) return;
 
+      debugPrint('ERROR BOOKING: $error');
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
+          content: Text(
+            error.toString().replaceFirst('Exception: ', ''),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -149,6 +215,10 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
     }
   }
 
+  // =====================================================
+  // BUILD UI
+  // =====================================================
+
   @override
   Widget build(BuildContext context) {
     const ungu = Color(0xFFD24BD8);
@@ -160,15 +230,20 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
           builder: (context, constraints) {
             return SingleChildScrollView(
               child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
                 child: IntrinsicHeight(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 12),
 
+                        // TOMBOL KEMBALI
                         IconButton(
                           padding: EdgeInsets.zero,
                           alignment: Alignment.centerLeft,
@@ -184,6 +259,7 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
 
                         const SizedBox(height: 24),
 
+                        // JUDUL
                         Center(
                           child: Text(
                             'Detail Pendaftaran',
@@ -197,6 +273,7 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
 
                         const SizedBox(height: 48),
 
+                        // KARTU PESERTA
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
@@ -212,19 +289,25 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
                             children: [
                               CircleAvatar(
                                 radius: 34,
-                                backgroundColor: const Color(0xFFF2F2F2),
-                                backgroundImage: AssetImage(_avatarPeserta),
+                                backgroundColor:
+                                    const Color(0xFFF2F2F2),
+                                backgroundImage:
+                                    AssetImage(_avatarPeserta),
                               ),
+
                               const SizedBox(width: 18),
+
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       _namaPeserta,
                                       style: GoogleFonts.poppins(
                                         fontSize: 16,
-                                        fontWeight: FontWeight.w700,
+                                        fontWeight:
+                                            FontWeight.w700,
                                         color: Colors.black,
                                       ),
                                     ),
@@ -244,6 +327,7 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
 
                         const SizedBox(height: 14),
 
+                        // DETAIL LAYANAN
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
@@ -266,18 +350,24 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
                                 judul: 'Layanan',
                                 isi: _layanan,
                               ),
+
                               const SizedBox(height: 19),
+
                               _detailRow(
                                 icon: Icons.calendar_month_outlined,
                                 judul: 'Jadwal',
-                                isi: '${widget.tanggal}\n${widget.waktu}',
+                                isi:
+                                    '${widget.tanggal}\n${widget.waktu}',
                               ),
+
                               const SizedBox(height: 19),
+
                               _detailRow(
                                 icon: Icons.location_on,
                                 judul: 'Lokasi',
-                                isi: (widget.jadwal['lokasi'] ?? '-')
-                                    .toString(),
+                                isi:
+                                    (widget.jadwal['lokasi'] ?? '-')
+                                        .toString(),
                               ),
                             ],
                           ),
@@ -287,6 +377,7 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
 
                         const SizedBox(height: 18),
 
+                        // INFORMASI
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
@@ -302,14 +393,17 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
                             ),
                           ),
                           child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
+                            crossAxisAlignment:
+                                CrossAxisAlignment.center,
                             children: [
                               const Icon(
                                 Icons.info_outline,
                                 color: ungu,
                                 size: 27,
                               ),
+
                               const SizedBox(width: 12),
+
                               Expanded(
                                 child: Text(
                                   'Data Peserta akan digunakan '
@@ -330,36 +424,45 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
 
                         const SizedBox(height: 36),
 
+                        // TOMBOL DAFTAR
                         Container(
                           width: double.infinity,
                           height: 52,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFF9148D8), Color(0xFFE0468F)],
+                              colors: [
+                                Color(0xFF9148D8),
+                                Color(0xFFE0468F),
+                              ],
                             ),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              borderRadius: BorderRadius.circular(16),
-                              onTap: _isSubmitting ? null : _daftarkanAntrean,
-
+                              borderRadius:
+                                  BorderRadius.circular(16),
+                              onTap: _isSubmitting
+                                  ? null
+                                  : _daftarkanAntrean,
                               child: Center(
                                 child: _isSubmitting
                                     ? const SizedBox(
                                         width: 21,
                                         height: 21,
-                                        child: CircularProgressIndicator(
+                                        child:
+                                            CircularProgressIndicator(
                                           strokeWidth: 2,
                                           color: Colors.white,
                                         ),
                                       )
                                     : Text(
                                         'Daftar Posyandu',
-                                        style: GoogleFonts.poppins(
+                                        style:
+                                            GoogleFonts.poppins(
                                           fontSize: 15,
-                                          fontWeight: FontWeight.w600,
+                                          fontWeight:
+                                              FontWeight.w600,
                                           color: Colors.white,
                                         ),
                                       ),
@@ -381,6 +484,10 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
     );
   }
 
+  // =====================================================
+  // DETAIL ROW
+  // =====================================================
+
   Widget _detailRow({
     required IconData icon,
     String? imagePath,
@@ -400,7 +507,11 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
                   height: 30,
                   fit: BoxFit.contain,
                 )
-              : Icon(icon, size: 30, color: const Color(0xFFD24BD8)),
+              : Icon(
+                  icon,
+                  size: 30,
+                  color: const Color(0xFFD24BD8),
+                ),
         ),
 
         const SizedBox(width: 12),
@@ -411,7 +522,10 @@ class _DetailPendaftaranPageState extends State<DetailPendaftaranPage> {
             children: [
               Text(
                 judul,
-                style: GoogleFonts.poppins(fontSize: 13, color: Colors.black),
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: Colors.black,
+                ),
               ),
               Text(
                 isi,

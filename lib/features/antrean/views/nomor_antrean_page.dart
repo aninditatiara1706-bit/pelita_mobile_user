@@ -142,8 +142,9 @@ class NomorAntreanPage extends StatelessWidget {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) =>
-                                        PantauAntreanPage(antrean: antrean),
+                                    builder: (_) => PantauAntreanPage(
+                                      antreanId: vm.antrean?.id,
+                                    ),
                                   ),
                                 );
                               },
